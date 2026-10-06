@@ -1,0 +1,513 @@
+{
+  "schema_version": "mimosa-task-review/v2",
+  "run_id": "20261006T085517959Z-43320-10f8110b3d4b",
+  "run_status": "inconclusive",
+  "errors": [
+    {
+      "stage": "candidate-select",
+      "target": "src/Zvec.NET/Rerank/ReRanker.cs",
+      "reason": "candidate_limit_exceeded: 27 changed reviewable file(s) were not scanned because the limit is 20"
+    }
+  ],
+  "coverage": {
+    "schema_version": "mimosa-hook-coverage/v1",
+    "status": "partial",
+    "scope": "hook_observed_diff",
+    "baseline": {
+      "complete": true,
+      "captured_files": 33,
+      "candidate_limit": 5000,
+      "truncated": false,
+      "enumeration_error_count": 0,
+      "snapshot_error_count": 0,
+      "compensated_target_count": 32
+    },
+    "change_tracking": {
+      "touched_observed": 32,
+      "touched_retained": 32,
+      "truncated": false,
+      "bash_mutation": true,
+      "bash_discovered": 47,
+      "bash_discovery_limit": 80,
+      "bash_discovery_truncated": false
+    },
+    "candidates": {
+      "eligible_files": 47,
+      "selected_files": 20,
+      "limit": 20,
+      "truncated": true
+    },
+    "scanning": {
+      "required_files": 20,
+      "scanned_files": 20,
+      "skipped_files": 0,
+      "failed_files": 0,
+      "project_checks_required": 0,
+      "project_checks_completed": 0
+    },
+    "notification": {
+      "eligible_findings": 1,
+      "detailed_findings": 1,
+      "detail_limit": 3,
+      "truncated": false
+    },
+    "reason_counts": {
+      "candidate_limit_exceeded": 1,
+      "project_check_failed": 1
+    },
+    "reasons": [
+      {
+        "code": "candidate_limit_exceeded",
+        "stage": "candidate-select",
+        "target": "src/Zvec.NET/Rerank/ReRanker.cs",
+        "detail": "27 changed reviewable file(s) were not scanned because the limit is 20",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "candidate-select",
+        "target": "src/Zvec.NET/Rerank/ReRanker.cs",
+        "detail": "candidate_limit_exceeded: 27 changed reviewable file(s) were not scanned because the limit is 20",
+        "affects_completion": true
+      }
+    ],
+    "reasons_truncated": false
+  },
+  "generated_at": "2026-10-06T08:55:17.959Z",
+  "session_id": "sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c",
+  "target": ".",
+  "revision": null,
+  "rules_version": "unavailable",
+  "diff_hash": "414cf9fb11325fd67fa99cf627c9c4a6a93bcc6e79a47176332a7e6034892898",
+  "diff": {
+    "algorithm": "sha256",
+    "changed_file_count": 20,
+    "changed_files": [
+      {
+        "file": "src/Zvec.NET/Collection.Core.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 230
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "b7f219e69fae933bca11395a8532961020454ac1929c62755562333d228a02f6"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.Ddl.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 168
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "db701e594bdd7e86a320aef1b4eb10b8542aa800b4afbe3cdc917a3a1635a9c6"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.Fetch.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 47
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "2d9a93e391a63c54cfe2867b4128633ee5265412397bbbfa537510729dd6e88d"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.GroupBy.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 53
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "4670e89989073c367691fa090a903af52f5b6c33a336c00f1eb4a77bbbf3b07a"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.Iterate.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 63
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "cc144d66d3528913f6bf7f59c8990553b037d24574e2b2ea3a35ecbe1242f4e1"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.Query.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 339
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "b985f201b142db6c5a3b4519b0c60483af6e4c69f43eb788accabbd20acebde2"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/DocCodec.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 594
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "9c42404029f69cf422679a374bc17efe287fbd2ed0c8cb11a4fbcb527844b6e0"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/NativeMethods.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 687
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "3695c9aa400488a4b20aac12ff1b08d79429cb7af24e222547490d218d3834d4"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/NativeTypes.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 100
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "3b315a18d20c21c599c97e382f2a6088a4624e3f335c183666322efacc840477"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/NativeUtil.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 167
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "ceb8db12308299f7858e72fa0bf8c66fb80c1bb342ae6208caf62b100a10545e"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/ParamBuilder.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 352
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "1978866c0b86f900a8a1f1ad5ca4c1f48c76c87dc3e3da0c9f0ab5e135e020ce"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/ZvecException.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 38
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "e14e86547d0da72921fcd5ec86791f93f6bfab9c3a3b82da2dbe756429b65270"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/ZvecNative.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 154
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "831eba8ab16abded0a2da42dbf433cdb6870c7fd7619cce7f117a3beb158f082"
+      },
+      {
+        "file": "src/Zvec.NET/Model/Doc.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 103
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "50182ada6277c7fa38785cf9331a952908b818ae610be06b4f4cde1203d240a1"
+      },
+      {
+        "file": "src/Zvec.NET/Model/Enums.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 93
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "a7a079335b4d4b51f54c64f2f3f67f789a29d3e3cc687dfdeb6236c4a865ce0c"
+      },
+      {
+        "file": "src/Zvec.NET/Model/IndexParams.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 219
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "c474d83dc40d9c881a69ca73ef7ad1d037e5f7ab54a7b017432b0776fe9f37d1"
+      },
+      {
+        "file": "src/Zvec.NET/Model/Query.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 122
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "0fceb138af5e36085ce73006644b47bcd72fd83258d21a729531cf08e589f0f6"
+      },
+      {
+        "file": "src/Zvec.NET/Model/QueryParams.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 133
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "dcfc981fdd5a4b163aa4900a6cd1510d76f44ca223506ee0a33ca52f05d4752c"
+      },
+      {
+        "file": "src/Zvec.NET/Model/Schema.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 106
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "4696200c79bd62f07138c035697e6d6a440de25949a321e9338e66f9998640fb"
+      },
+      {
+        "file": "src/Zvec.NET/Zvec.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 154
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "888a3e1dbbe11e0394f4d78b027b20f076e43804c0c725a283efef9b3ad223c3"
+      }
+    ]
+  },
+  "timing": {
+    "started_at": "2026-10-06T08:55:15.931Z",
+    "completed_at": "2026-10-06T08:55:17.959Z",
+    "duration_ms": 2028,
+    "measurement": "hook_wall_clock"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "model_calls": 0,
+    "measurement": "known-zero"
+  },
+  "telemetry": {
+    "schemaVersion": "mimosa-gate-telemetry/v1",
+    "profile": "gate",
+    "operation": "Stop",
+    "outcome": "partial/INCONCLUSIVE",
+    "latencyMs": 2028,
+    "peakMemoryBytes": 148275200,
+    "memoryMeasurement": "max-observed-process-rss",
+    "scannedFiles": 20,
+    "cache": {
+      "hits": 0,
+      "misses": 0,
+      "measurement": "not-applicable"
+    },
+    "denyCount": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "total": 0,
+      "modelCalls": 0,
+      "measurement": "known-zero"
+    }
+  },
+  "finding_count": 1,
+  "rewake_finding_count": 1,
+  "evidence_boundary": {
+    "scan": "candidate",
+    "static_fix_verification": "observed_static_only",
+    "runtime_verification": "not_performed"
+  },
+  "finding_events": [
+    {
+      "finding_id": "mimosa-112aa16d1ce2eb0626e90e90",
+      "file": "src/Zvec.NET/Collection.cs",
+      "line": 630,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-10-06T08:28:05.481Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-0d0ea8b034c0f5bdaefdbde7",
+      "file": "src/Zvec.NET/Collection.Query.cs",
+      "line": 462,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-10-06T08:29:19.703Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-0d0ea8b034c0f5bdaefdbde7",
+      "file": "src/Zvec.NET/Collection.Query.cs",
+      "line": 465,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-10-06T08:30:29.051Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-0d0ea8b034c0f5bdaefdbde7",
+      "file": "src/Zvec.NET/Collection.Query.cs",
+      "line": 465,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "fixed_candidate",
+      "decision": "repair_observed",
+      "at": "2026-10-06T08:34:12.489Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "candidate_before_evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "post_change_evidence_hash_at_previous_location": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-0d0ea8b034c0f5bdaefdbde7",
+      "file": "src/Zvec.NET/Collection.Query.cs",
+      "line": 465,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "static_verified",
+      "decision": "static_rescan_passed",
+      "at": "2026-10-06T08:34:12.489Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "candidate_before_evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "post_change_evidence_hash_at_previous_location": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-46bbc65c20fb92f2def0c468",
+      "file": "src/Zvec.NET/Collection.GroupBy.cs",
+      "line": 25,
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "blocked",
+      "decision": "stop_rewake",
+      "at": "2026-10-06T08:55:17.959Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+        "runtime_oracle": false
+      }
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "mimosa-46bbc65c20fb92f2def0c468",
+      "file": "src/Zvec.NET/Collection.GroupBy.cs",
+      "line": 25,
+      "end_line": 25,
+      "severity": "high",
+      "category": "SQL 注入",
+      "kind": "semgrep",
+      "advisory": false,
+      "status": "blocked",
+      "evidence_boundary": "candidate",
+      "evidence": [
+        {
+          "kind": "static_scan",
+          "boundary": "candidate",
+          "producer": "deterministic",
+          "source": "semgrep",
+          "file": "src/Zvec.NET/Collection.GroupBy.cs",
+          "line": 25,
+          "evidence_hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+          "runtime_oracle": false
+        }
+      ],
+      "already_reported_to_agent": false,
+      "selected_for_rewake": true
+    }
+  ],
+  "artifacts": {
+    "immutable_report": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c-20261006T085517959Z-43320-10f8110b3d4b.json",
+    "latest_report": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c.json",
+    "history_summary": ".mimosa/history/run-20261006T085517959Z-43320-10f8110b3d4b.json"
+  }
+}

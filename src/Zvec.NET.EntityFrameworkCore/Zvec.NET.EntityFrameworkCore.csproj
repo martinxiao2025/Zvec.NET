@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Zvec.NET.EntityFrameworkCore</RootNamespace>
+    <AssemblyName>Zvec.NET.EntityFrameworkCore</AssemblyName>
+    <PackageId>Zvec.NET.EntityFrameworkCore</PackageId>
+    <Version>0.7.0-preview.1</Version>
+    <Authors>Zvec.NET contributors</Authors>
+    <Description>Entity Framework Core integration for Zvec.NET: attribute-mapped entity vector sets, upsert sync, and hybrid similar-search that joins back to EF entities.</Description>
+    <PackageTags>entity-framework-core;efcore;vector;embedding;search;zvec;hybrid-search</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/alibaba/zvec</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://zvec.org</PackageProjectUrl>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zvec.NET\Zvec.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>

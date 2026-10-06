@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "mimosa-finding-history/v1",
+  "runId": "20261006T095105132Z-45764-ff139c3c7903",
+  "runStatus": "inconclusive",
+  "errors": [
+    "baseline-read:tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.AssemblyInfo.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.GlobalUsings.g.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs: baseline_snapshot_unreadable: file is missing from task baseline",
+    "baseline-read:src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs: baseline_snapshot_unreadable: file is missing from task baseline"
+  ],
+  "target": ".",
+  "revision": null,
+  "diffHash": "a0867ea490c3418f2ff25568bc8868f2ee7e779a7469d3d48cb2ffcef1b24cd9",
+  "rulesVersion": "unavailable",
+  "recordedAt": "2026-10-06T09:51:05.132Z",
+  "timing": {
+    "startedAt": "2026-10-06T09:51:03.447Z",
+    "completedAt": "2026-10-06T09:51:05.132Z",
+    "durationMs": 1685
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "modelCalls": 0,
+    "measurement": "known-zero"
+  },
+  "findings": {
+    "total": 1,
+    "bySeverity": {
+      "high": 1
+    },
+    "byStatus": {
+      "blocked": 1
+    }
+  },
+  "coverage": {
+    "status": "partial",
+    "reasonCounts": {
+      "baseline_snapshot_unreadable": 9,
+      "project_check_failed": 9
+    }
+  },
+  "evidenceBoundary": "static_only",
+  "immutableReport": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c-20261006T095105132Z-45764-ff139c3c7903.json"
+}

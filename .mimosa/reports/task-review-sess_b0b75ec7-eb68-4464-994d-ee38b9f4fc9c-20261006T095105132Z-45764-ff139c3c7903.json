@@ -1,0 +1,579 @@
+{
+  "schema_version": "mimosa-task-review/v2",
+  "run_id": "20261006T095105132Z-45764-ff139c3c7903",
+  "run_status": "inconclusive",
+  "errors": [
+    {
+      "stage": "baseline-read",
+      "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.AssemblyInfo.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.GlobalUsings.g.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    },
+    {
+      "stage": "baseline-read",
+      "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    }
+  ],
+  "coverage": {
+    "schema_version": "mimosa-hook-coverage/v1",
+    "status": "partial",
+    "scope": "hook_observed_diff",
+    "baseline": {
+      "complete": true,
+      "captured_files": 55,
+      "candidate_limit": 5000,
+      "truncated": false,
+      "enumeration_error_count": 0,
+      "snapshot_error_count": 0,
+      "compensated_target_count": 8
+    },
+    "change_tracking": {
+      "touched_observed": 8,
+      "touched_retained": 8,
+      "truncated": false,
+      "bash_mutation": true,
+      "bash_discovered": 17,
+      "bash_discovery_limit": 80,
+      "bash_discovery_truncated": false
+    },
+    "candidates": {
+      "eligible_files": 17,
+      "selected_files": 17,
+      "limit": 20,
+      "truncated": false
+    },
+    "scanning": {
+      "required_files": 17,
+      "scanned_files": 17,
+      "skipped_files": 0,
+      "failed_files": 0,
+      "project_checks_required": 0,
+      "project_checks_completed": 0
+    },
+    "notification": {
+      "eligible_findings": 2,
+      "detailed_findings": 2,
+      "detail_limit": 3,
+      "truncated": false
+    },
+    "reason_counts": {
+      "baseline_snapshot_unreadable": 9,
+      "project_check_failed": 9
+    },
+    "reasons": [
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.AssemblyInfo.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.GlobalUsings.g.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.AssemblyInfo.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.GlobalUsings.g.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      }
+    ],
+    "reasons_truncated": false
+  },
+  "generated_at": "2026-10-06T09:51:05.132Z",
+  "session_id": "sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c",
+  "target": ".",
+  "revision": null,
+  "rules_version": "unavailable",
+  "diff_hash": "a0867ea490c3418f2ff25568bc8868f2ee7e779a7469d3d48cb2ffcef1b24cd9",
+  "diff": {
+    "algorithm": "sha256",
+    "changed_file_count": 17,
+    "changed_files": [
+      {
+        "file": "examples/Zvec.NET.Demo/Program.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 1
+          },
+          {
+            "start": 4,
+            "end": 4
+          },
+          {
+            "start": 110,
+            "end": 114
+          },
+          {
+            "start": 118,
+            "end": 175
+          }
+        ],
+        "before_hash": "633b09fec45bd4ae2832c3ca97f4f77c86d5fb6b29ae63664fbd0b96914bfefb",
+        "after_hash": "e53a9e4f96068aaf9b7fb5f450bdad9b96d0d793a62a578034ad6aad0f589ac0"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/EntityModel.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 217
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "a4677418d3de966b3b7efed6ba316d8e9c526e088f21660c4ae0e95ce14123a3"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 4
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "93d67476196ebfc80d1d7d8844b91146cfd678d105f5ce635eb900ca40610c9b"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 25
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "855254f4d161d67cc137f29a61796e1c1db6b548d4b4925421e961a7b4bfb370"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 8
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "a3c6048bb4d922b1799a9977f84362a3787b68810cac67aa86ac3aa23295f227"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 4
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "93d67476196ebfc80d1d7d8844b91146cfd678d105f5ce635eb900ca40610c9b"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.AssemblyInfo.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 25
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "d6bcbf5791eb90c8771241800f79b7da402e192a25258ff8a91e451b80176945"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/obj/Release/net10.0/Zvec.NET.EntityFrameworkCore.GlobalUsings.g.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 8
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "a3c6048bb4d922b1799a9977f84362a3787b68810cac67aa86ac3aa23295f227"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/SearchHit.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 7
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "9fe2eed43c340353f49f92e600435406872a1aa15e29c91f0a0ffa023e1be969"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/VectorMappingAttributes.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 48
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "500f57f468980718d969d5c0ee2ea430a79bfde19f3e5ab08858aade3345abfb"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/ZvecServiceCollectionExtensions.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 76
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "8560ec24ee68b4bc35c96931f2a1e642caa7c18fa1d4492bea83bccabdbc361e"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 175
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "ef4aede1a12e60afa3ec53305dd4f0de45384cc744089a9521d58c6c77e046ca"
+      },
+      {
+        "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSetOptions.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 38
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "3c7801d9da678f8c92a9137b5fd389694c2dd99d2055455860e5bc4e85c851aa"
+      },
+      {
+        "file": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 4
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "93d67476196ebfc80d1d7d8844b91146cfd678d105f5ce635eb900ca40610c9b"
+      },
+      {
+        "file": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.AssemblyInfo.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 22
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "9301c0105b6d5747c81f3bd213e648f1c460a52082ccc1a421e55b02fdc6616b"
+      },
+      {
+        "file": "tests/Zvec.NET.EntityFrameworkCore.Tests/obj/Debug/net10.0/Zvec.NET.EntityFrameworkCore.Tests.GlobalUsings.g.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 9
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "bc157bfcc147099886e678131c99ae69211e8650751a8d7b5fe5b410a5b6e421"
+      },
+      {
+        "file": "tests/Zvec.NET.EntityFrameworkCore.Tests/ZvecSetTests.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 203
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "91d3279fa2ca3f991f9ea3b92965d75794afce507d5cac8fbfae12d434ac72a9"
+      }
+    ]
+  },
+  "timing": {
+    "started_at": "2026-10-06T09:51:03.447Z",
+    "completed_at": "2026-10-06T09:51:05.132Z",
+    "duration_ms": 1685,
+    "measurement": "hook_wall_clock"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "model_calls": 0,
+    "measurement": "known-zero"
+  },
+  "telemetry": {
+    "schemaVersion": "mimosa-gate-telemetry/v1",
+    "profile": "gate",
+    "operation": "Stop",
+    "outcome": "partial/INCONCLUSIVE",
+    "latencyMs": 1685,
+    "peakMemoryBytes": 148361216,
+    "memoryMeasurement": "max-observed-process-rss",
+    "scannedFiles": 17,
+    "cache": {
+      "hits": 0,
+      "misses": 0,
+      "measurement": "not-applicable"
+    },
+    "denyCount": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "total": 0,
+      "modelCalls": 0,
+      "measurement": "known-zero"
+    }
+  },
+  "finding_count": 2,
+  "rewake_finding_count": 1,
+  "evidence_boundary": {
+    "scan": "candidate",
+    "static_fix_verification": "observed_static_only",
+    "runtime_verification": "not_performed"
+  },
+  "finding_events": [
+    {
+      "finding_id": "mimosa-ab10caf5eb765ef9c92343fe",
+      "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+      "line": 97,
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "blocked",
+      "decision": "stop_rewake",
+      "at": "2026-10-06T09:51:05.132Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "692dc326eda834e045ee4e2f7dc04a426feac13c6b4f1ed92f0b7240d12452cd",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-ab10caf5eb765ef9c92343fe",
+      "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+      "line": 105,
+      "severity": "high",
+      "category": "SQL 注入",
+      "status": "blocked",
+      "decision": "stop_rewake",
+      "at": "2026-10-06T09:51:05.132Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "692dc326eda834e045ee4e2f7dc04a426feac13c6b4f1ed92f0b7240d12452cd",
+        "runtime_oracle": false
+      }
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "mimosa-ab10caf5eb765ef9c92343fe",
+      "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+      "line": 97,
+      "end_line": 97,
+      "severity": "high",
+      "category": "SQL 注入",
+      "kind": "semgrep",
+      "advisory": false,
+      "status": "blocked",
+      "evidence_boundary": "candidate",
+      "evidence": [
+        {
+          "kind": "static_scan",
+          "boundary": "candidate",
+          "producer": "deterministic",
+          "source": "semgrep",
+          "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+          "line": 97,
+          "evidence_hash": "692dc326eda834e045ee4e2f7dc04a426feac13c6b4f1ed92f0b7240d12452cd",
+          "runtime_oracle": false
+        }
+      ],
+      "already_reported_to_agent": false,
+      "selected_for_rewake": true
+    },
+    {
+      "finding_id": "mimosa-ab10caf5eb765ef9c92343fe",
+      "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+      "line": 105,
+      "end_line": 105,
+      "severity": "high",
+      "category": "SQL 注入",
+      "kind": "semgrep",
+      "advisory": false,
+      "status": "blocked",
+      "evidence_boundary": "candidate",
+      "evidence": [
+        {
+          "kind": "static_scan",
+          "boundary": "candidate",
+          "producer": "deterministic",
+          "source": "semgrep",
+          "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+          "line": 105,
+          "evidence_hash": "692dc326eda834e045ee4e2f7dc04a426feac13c6b4f1ed92f0b7240d12452cd",
+          "runtime_oracle": false
+        }
+      ],
+      "already_reported_to_agent": false,
+      "selected_for_rewake": true
+    }
+  ],
+  "artifacts": {
+    "immutable_report": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c-20261006T095105132Z-45764-ff139c3c7903.json",
+    "latest_report": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c.json",
+    "history_summary": ".mimosa/history/run-20261006T095105132Z-45764-ff139c3c7903.json"
+  }
+}

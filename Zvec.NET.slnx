@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/Zvec.NET.Demo/Zvec.NET.Demo.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Zvec.NET.EntityFrameworkCore/Zvec.NET.EntityFrameworkCore.csproj" />
+    <Project Path="src/Zvec.NET/Zvec.NET.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Zvec.NET.EntityFrameworkCore.Tests/Zvec.NET.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="tests/Zvec.NET.Tests/Zvec.NET.Tests.csproj" />
+  </Folder>
+</Solution>

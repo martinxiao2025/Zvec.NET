@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "stop-20261006T090348503Z-34536-9ad9c7cfa242",
+  "runId": "20261006T090348503Z-34536-9ad9c7cfa242",
+  "runStatus": "completed",
+  "coverage": {
+    "status": "complete",
+    "reasons": []
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "Stop"
+  },
+  "revision": null,
+  "diffHash": "58d8e38b43b05b48b32db5a553226d783790ca2bbc2cff5613238be54eb2525a",
+  "rulesVersion": "unavailable",
+  "sessionHash": "7b36f4a8e583eaef651d271ee1b26721fd5a7a229538e92e2a9f12cdbb90303f",
+  "reportRef": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c-20261006T090348503Z-34536-9ad9c7cfa242.json",
+  "events": [
+    {
+      "eventId": "hook-c03c10c7b69d22e87cd409e57e745936",
+      "findingId": "mimosa-7e04283bcc7d158d013f8e55",
+      "type": "finding_blocked",
+      "at": "2026-10-06T09:00:54.461Z",
+      "identity": {
+        "projectRelativeFile": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+        "ruleId": "security",
+        "codeEvidenceHash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 46,
+      "endLine": 46,
+      "reasonCode": "deny",
+      "reportedToAgent": true,
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "evidenceHash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41"
+      },
+      "sequence": 0
+    },
+    {
+      "eventId": "hook-9fe4516d2584faee3e5a2cb31a845cae",
+      "findingId": "mimosa-7e04283bcc7d158d013f8e55",
+      "type": "static_fix_verified",
+      "at": "2026-10-06T09:01:07.696Z",
+      "identity": {
+        "projectRelativeFile": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+        "ruleId": "security",
+        "codeEvidenceHash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 46,
+      "endLine": 46,
+      "reasonCode": "static_rescan_passed",
+      "reportedToAgent": false,
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "evidenceHash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41"
+      },
+      "sequence": 1
+    }
+  ],
+  "observedFindingIds": [],
+  "verifiedFiles": [
+    {
+      "file": "src/Zvec.NET/Interop/ZvecNative.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Collection.Core.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Zvec.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Rerank/ReRanker.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Embedding/BM25Embedding.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Embedding/OpenAIEmbedding.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Collection.Async.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Collection.Fetch.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "src/Zvec.NET/Interop/DocCodec.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "tests/Zvec.NET.Tests/RerankerEmbeddingErrorTests.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "tests/Zvec.NET.Tests/ZvecFixture.cs",
+      "direct": "complete",
+      "projectContext": "partial"
+    }
+  ],
+  "recordedAt": "2026-10-06T09:03:48.981Z"
+}

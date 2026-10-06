@@ -1,0 +1,566 @@
+{
+  "schema_version": "mimosa-task-review/v2",
+  "run_id": "20261006T090348503Z-34536-9ad9c7cfa242",
+  "run_status": "completed",
+  "errors": [],
+  "coverage": {
+    "schema_version": "mimosa-hook-coverage/v1",
+    "status": "complete",
+    "scope": "hook_observed_diff",
+    "baseline": {
+      "complete": true,
+      "captured_files": 48,
+      "candidate_limit": 5000,
+      "truncated": false,
+      "enumeration_error_count": 0,
+      "snapshot_error_count": 0,
+      "compensated_target_count": 13
+    },
+    "change_tracking": {
+      "touched_observed": 13,
+      "touched_retained": 13,
+      "truncated": false,
+      "bash_mutation": true,
+      "bash_discovered": 13,
+      "bash_discovery_limit": 80,
+      "bash_discovery_truncated": false
+    },
+    "candidates": {
+      "eligible_files": 13,
+      "selected_files": 13,
+      "limit": 20,
+      "truncated": false
+    },
+    "scanning": {
+      "required_files": 12,
+      "scanned_files": 12,
+      "skipped_files": 0,
+      "failed_files": 0,
+      "project_checks_required": 0,
+      "project_checks_completed": 0
+    },
+    "notification": {
+      "eligible_findings": 0,
+      "detailed_findings": 0,
+      "detail_limit": 3,
+      "truncated": false
+    },
+    "reason_counts": {},
+    "reasons": [],
+    "reasons_truncated": false
+  },
+  "generated_at": "2026-10-06T09:03:48.503Z",
+  "session_id": "sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c",
+  "target": ".",
+  "revision": null,
+  "rules_version": "unavailable",
+  "diff_hash": "58d8e38b43b05b48b32db5a553226d783790ca2bbc2cff5613238be54eb2525a",
+  "diff": {
+    "algorithm": "sha256",
+    "changed_file_count": 12,
+    "changed_files": [
+      {
+        "file": "src/Zvec.NET/Collection.Async.cs",
+        "ranges": [
+          {
+            "start": 53,
+            "end": 53
+          },
+          {
+            "start": 61,
+            "end": 61
+          },
+          {
+            "start": 68,
+            "end": 68
+          }
+        ],
+        "before_hash": "2e42212bbaf8dee286e3bd408a08b6198806f872f9ded052711e47762e8bf101",
+        "after_hash": "e0df1715213baa02752dd1d11a07c0fe3d64278952780a90fff515e4309e9a3e"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.Core.cs",
+        "ranges": [
+          {
+            "start": 7,
+            "end": 8
+          },
+          {
+            "start": 22,
+            "end": 22
+          },
+          {
+            "start": 25,
+            "end": 25
+          },
+          {
+            "start": 28,
+            "end": 28
+          },
+          {
+            "start": 36,
+            "end": 36
+          },
+          {
+            "start": 44,
+            "end": 44
+          },
+          {
+            "start": 47,
+            "end": 47
+          },
+          {
+            "start": 53,
+            "end": 53
+          },
+          {
+            "start": 59,
+            "end": 60
+          },
+          {
+            "start": 66,
+            "end": 66
+          },
+          {
+            "start": 71,
+            "end": 71
+          },
+          {
+            "start": 81,
+            "end": 81
+          },
+          {
+            "start": 86,
+            "end": 86
+          },
+          {
+            "start": 92,
+            "end": 92
+          },
+          {
+            "start": 104,
+            "end": 104
+          },
+          {
+            "start": 109,
+            "end": 109
+          },
+          {
+            "start": 114,
+            "end": 114
+          },
+          {
+            "start": 119,
+            "end": 119
+          },
+          {
+            "start": 199,
+            "end": 199
+          },
+          {
+            "start": 204,
+            "end": 204
+          },
+          {
+            "start": 224,
+            "end": 225
+          }
+        ],
+        "before_hash": "b7f219e69fae933bca11395a8532961020454ac1929c62755562333d228a02f6",
+        "after_hash": "308f034a757fd5204685569e0d7922b89d11fddc899dcdcffac0a8ae88749e8b"
+      },
+      {
+        "file": "src/Zvec.NET/Collection.Fetch.cs",
+        "ranges": [
+          {
+            "start": 6,
+            "end": 6
+          },
+          {
+            "start": 20,
+            "end": 27
+          }
+        ],
+        "before_hash": "2d9a93e391a63c54cfe2867b4128633ee5265412397bbbfa537510729dd6e88d",
+        "after_hash": "c3d1dc51c0a726e91c79bb4805e096cef2fc4e2424143f7492f5e603cd4b83b8"
+      },
+      {
+        "file": "src/Zvec.NET/Embedding/BM25Embedding.cs",
+        "ranges": [
+          {
+            "start": 107,
+            "end": 107
+          },
+          {
+            "start": 111,
+            "end": 114
+          },
+          {
+            "start": 116,
+            "end": 116
+          },
+          {
+            "start": 118,
+            "end": 119
+          },
+          {
+            "start": 121,
+            "end": 130
+          },
+          {
+            "start": 134,
+            "end": 137
+          },
+          {
+            "start": 139,
+            "end": 139
+          },
+          {
+            "start": 141,
+            "end": 141
+          },
+          {
+            "start": 145,
+            "end": 145
+          }
+        ],
+        "before_hash": "ee61c99a4e7adaa25f8bb821a3c97b02c52e4828019cb88e34062bdbc73e3191",
+        "after_hash": "d91c53ff7614b7565a8456196f3805992f6052d38f0a971483b2670a7b8a9418"
+      },
+      {
+        "file": "src/Zvec.NET/Embedding/OpenAIEmbedding.cs",
+        "ranges": [
+          {
+            "start": 56,
+            "end": 68
+          }
+        ],
+        "before_hash": "455f85750a1dbb904ade78d888e653b8626b9724c688d56523dc4f88f21ce5e3",
+        "after_hash": "f1edb66b9c84c0266089f0e5cf3634cc8921857d2cc263f2d5b9a293c57763e9"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/DocCodec.cs",
+        "ranges": [
+          {
+            "start": 12,
+            "end": 16
+          }
+        ],
+        "before_hash": "9c42404029f69cf422679a374bc17efe287fbd2ed0c8cb11a4fbcb527844b6e0",
+        "after_hash": "bf37b8c374d90a2d1fcf11dd9e866acfa7f20861f5acd42019d40db2e6a85a8e"
+      },
+      {
+        "file": "src/Zvec.NET/Interop/ZvecNative.cs",
+        "ranges": [
+          {
+            "start": 7,
+            "end": 10
+          },
+          {
+            "start": 15,
+            "end": 15
+          },
+          {
+            "start": 17,
+            "end": 23
+          },
+          {
+            "start": 25,
+            "end": 25
+          },
+          {
+            "start": 27,
+            "end": 27
+          },
+          {
+            "start": 31,
+            "end": 35
+          },
+          {
+            "start": 37,
+            "end": 43
+          },
+          {
+            "start": 45,
+            "end": 45
+          },
+          {
+            "start": 48,
+            "end": 48
+          },
+          {
+            "start": 50,
+            "end": 52
+          },
+          {
+            "start": 54,
+            "end": 54
+          },
+          {
+            "start": 58,
+            "end": 58
+          },
+          {
+            "start": 61,
+            "end": 61
+          },
+          {
+            "start": 63,
+            "end": 63
+          },
+          {
+            "start": 65,
+            "end": 65
+          },
+          {
+            "start": 67,
+            "end": 69
+          },
+          {
+            "start": 72,
+            "end": 72
+          },
+          {
+            "start": 74,
+            "end": 74
+          },
+          {
+            "start": 76,
+            "end": 77
+          },
+          {
+            "start": 79,
+            "end": 83
+          },
+          {
+            "start": 85,
+            "end": 89
+          },
+          {
+            "start": 92,
+            "end": 93
+          },
+          {
+            "start": 95,
+            "end": 95
+          },
+          {
+            "start": 99,
+            "end": 99
+          },
+          {
+            "start": 102,
+            "end": 102
+          },
+          {
+            "start": 104,
+            "end": 105
+          },
+          {
+            "start": 107,
+            "end": 107
+          },
+          {
+            "start": 109,
+            "end": 109
+          },
+          {
+            "start": 112,
+            "end": 114
+          },
+          {
+            "start": 116,
+            "end": 117
+          },
+          {
+            "start": 120,
+            "end": 120
+          }
+        ],
+        "before_hash": "831eba8ab16abded0a2da42dbf433cdb6870c7fd7619cce7f117a3beb158f082",
+        "after_hash": "2a811d14244eb8c35a75eedb075fc8d99373541a7bf3f4b22fee837a43e3a828"
+      },
+      {
+        "file": "src/Zvec.NET/Rerank/ReRanker.cs",
+        "ranges": [
+          {
+            "start": 88,
+            "end": 88
+          }
+        ],
+        "before_hash": "b8ae78cd6e97b157183bb77e5cde7f67f817a47daa7ec2701d7a673fa6a5c91a",
+        "after_hash": "f9049e7c8d3d69b4ef570976aa105178eed708a3a649894e8b9dd390c6c2adb5"
+      },
+      {
+        "file": "src/Zvec.NET/Zvec.cs",
+        "ranges": [
+          {
+            "start": 126,
+            "end": 127
+          },
+          {
+            "start": 147,
+            "end": 147
+          }
+        ],
+        "before_hash": "888a3e1dbbe11e0394f4d78b027b20f076e43804c0c725a283efef9b3ad223c3",
+        "after_hash": "3bc5dc8ae88837de08c20e9404d9dfb512a1fc7d79b2dd9b3a9822757bfcd902"
+      },
+      {
+        "file": "tests/Zvec.NET.Tests/RerankerEmbeddingErrorTests.cs",
+        "ranges": [
+          {
+            "start": 79,
+            "end": 80
+          }
+        ],
+        "before_hash": "61d2d83df93e9eed763b6d36fd271160ba0a5fbb8038216952257603ce2cde4e",
+        "after_hash": "d987ce8506d60ada4ead1786235e2e46a5cbed22c2d14f6ec92ed505cb5e4bf1"
+      },
+      {
+        "file": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 71
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "129ff2bbd1699e2fa4a1345234ebd81b3c0cd5fea2dd022eed88d2d3315a26d8"
+      },
+      {
+        "file": "tests/Zvec.NET.Tests/ZvecFixture.cs",
+        "ranges": [
+          {
+            "start": 8,
+            "end": 8
+          }
+        ],
+        "before_hash": "1bde0e1fb6254e94f96ea4253544766607cec75f83dfb06199bf0272ffe0277f",
+        "after_hash": "8d37d6abb9455cf9efd0e130fe03fec2d0ee7cf8e5612a3004ede73d490b9f2d"
+      }
+    ]
+  },
+  "timing": {
+    "started_at": "2026-10-06T09:03:46.938Z",
+    "completed_at": "2026-10-06T09:03:48.503Z",
+    "duration_ms": 1565,
+    "measurement": "hook_wall_clock"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "model_calls": 0,
+    "measurement": "known-zero"
+  },
+  "telemetry": {
+    "schemaVersion": "mimosa-gate-telemetry/v1",
+    "profile": "gate",
+    "operation": "Stop",
+    "outcome": "complete",
+    "latencyMs": 1565,
+    "peakMemoryBytes": 148054016,
+    "memoryMeasurement": "max-observed-process-rss",
+    "scannedFiles": 12,
+    "cache": {
+      "hits": 0,
+      "misses": 0,
+      "measurement": "not-applicable"
+    },
+    "denyCount": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "total": 0,
+      "modelCalls": 0,
+      "measurement": "known-zero"
+    }
+  },
+  "finding_count": 0,
+  "rewake_finding_count": 0,
+  "evidence_boundary": {
+    "scan": "candidate",
+    "static_fix_verification": "observed_static_only",
+    "runtime_verification": "not_performed"
+  },
+  "finding_events": [
+    {
+      "finding_id": "mimosa-7e04283bcc7d158d013f8e55",
+      "file": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+      "line": 46,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "硬编码凭据",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-10-06T09:00:54.461Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-7e04283bcc7d158d013f8e55",
+      "file": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+      "line": 46,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "硬编码凭据",
+      "status": "fixed_candidate",
+      "decision": "repair_observed",
+      "at": "2026-10-06T09:01:07.696Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "candidate_before_evidence_hash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "post_change_evidence_hash_at_previous_location": "69912f9f1d9554c2592dff921341fd47f571b8fca3434ad794d7df48cc8ec0e6",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-7e04283bcc7d158d013f8e55",
+      "file": "tests/Zvec.NET.Tests/ReviewGapTests.cs",
+      "line": 46,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "硬编码凭据",
+      "status": "static_verified",
+      "decision": "static_rescan_passed",
+      "at": "2026-10-06T09:01:07.696Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "candidate_before_evidence_hash": "a2d6c7826ddf7ba39d38b921483eb8ae879400ad018af1de9d6bc7f5d76dad41",
+        "post_change_evidence_hash_at_previous_location": "69912f9f1d9554c2592dff921341fd47f571b8fca3434ad794d7df48cc8ec0e6",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    }
+  ],
+  "findings": [],
+  "artifacts": {
+    "immutable_report": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c-20261006T090348503Z-34536-9ad9c7cfa242.json",
+    "latest_report": ".mimosa/reports/task-review-sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c.json",
+    "history_summary": ".mimosa/history/run-20261006T090348503Z-34536-9ad9c7cfa242.json"
+  }
+}

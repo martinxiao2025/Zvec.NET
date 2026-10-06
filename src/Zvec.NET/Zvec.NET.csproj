@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Zvec.NET</RootNamespace>
+    <AssemblyName>Zvec.NET</AssemblyName>
+    <PackageId>Zvec.NET</PackageId>
+    <Version>0.7.0-preview.1</Version>
+    <Authors>Zvec.NET contributors</Authors>
+    <Description>.NET 10 bindings for Zvec, the open-source in-process vector database (wraps the official Zvec C API, aligned with the Python SDK API surface).</Description>
+    <PackageTags>vector;database;embedding;search;ann;hnsw;ivf;bm25;hybrid-search;zvec</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/alibaba/zvec</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://zvec.org</PackageProjectUrl>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CA2255</NoWarn>
+    <!-- README 随 NuGet 包展示 -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- 将 runtimes/ 下的原生库打进 NuGet 包 -->
+    <IncludeNativeLibrariesForSelfExtract Condition="'$(Configuration)'=='Release'">true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Zvec.NET.Tests" />
+  </ItemGroup>
+
+  <!-- 原生库随包分发：runtimes/<rid>/native/** 默认即被打包，此处显式声明并复制到输出目录便于本地开发调试 -->
+  <ItemGroup>
+    <None Include="runtimes\**\*" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes\" Visible="false" />
+  </ItemGroup>
+
+</Project>

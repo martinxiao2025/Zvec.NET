@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "mimosa-hook-status/v1",
+  "recordedAt": "2026-10-06T09:51:50.875Z",
+  "sessionId": "sess_b0b75ec7-eb68-4464-994d-ee38b9f4fc9c",
+  "event": "PreToolUse",
+  "toolName": "Edit",
+  "file": "src/Zvec.NET.EntityFrameworkCore/ZvecSet.cs",
+  "outcome": "blocked",
+  "coverage": "complete",
+  "findingCount": 2,
+  "durationMs": 1349,
+  "telemetry": {
+    "schemaVersion": "mimosa-gate-telemetry/v1",
+    "profile": "gate",
+    "operation": "PreToolUse",
+    "outcome": "complete",
+    "latencyMs": 1349,
+    "peakMemoryBytes": 148062208,
+    "memoryMeasurement": "max-observed-process-rss",
+    "scannedFiles": 1,
+    "cache": {
+      "hits": 0,
+      "misses": 1,
+      "measurement": "not-applicable"
+    },
+    "denyCount": 1,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "total": 0,
+      "modelCalls": 0,
+      "measurement": "known-zero"
+    }
+  },
+  "hostState": "hook_complete_waiting_host_tool_decision",
+  "reportHint": ".mimosa/reports/"
+}
