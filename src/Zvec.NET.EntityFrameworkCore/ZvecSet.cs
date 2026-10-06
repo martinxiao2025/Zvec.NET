@@ -92,11 +92,22 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
 
     public WriteResult[] DeleteKeys(IEnumerable<string> keys) => Underlying.Delete(keys);
 
+    /// <summary>
+    /// 过滤表达式边界校验（分层防御；核心包 Collection.Query 亦会校验）：
+    /// null 放行（不过滤），空串/含 NUL 拒绝。表达式由 Zvec 引擎端解析（对齐 Python SDK
+    /// 的非参数化 filter 参数），来源不可信时调用方须自行校验。
+    /// </summary>
+    private static string? ValidateFilter(string? filter) => filter is null
+        ? null
+        : filter.Length == 0 || filter.Contains('\0')
+            ? throw new ArgumentException("过滤表达式不能为空串或包含 NUL 字符。", nameof(filter))
+            : filter;
+
     public IReadOnlyList<SearchHit> Search(float[] vector, int topk = 10, string? filter = null, string? fieldName = null)
     {
         ArgumentNullException.ThrowIfNull(vector);
         IReadOnlyList<Doc> docs = Underlying.Query(
-            new Query(ResolveVectorField(fieldName, DataType.VectorFp32), vector: vector), topk, filter);
+            new Query(ResolveVectorField(fieldName, DataType.VectorFp32), vector: vector), topk, ValidateFilter(filter));
         return [.. docs.Select(ToHit)];
     }
 
@@ -104,7 +115,7 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
     {
         ArgumentNullException.ThrowIfNull(vector);
         IReadOnlyList<Doc> docs = Underlying.Query(
-            new Query(ResolveVectorField(fieldName, DataType.SparseVectorFp32), vector: vector), topk, filter);
+            new Query(ResolveVectorField(fieldName, DataType.SparseVectorFp32), vector: vector), topk, ValidateFilter(filter));
         return [.. docs.Select(ToHit)];
     }
 

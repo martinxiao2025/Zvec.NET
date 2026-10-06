@@ -200,4 +200,14 @@ public sealed class ZvecSetTests
         Assert.Throws<ArgumentException>(() => ZvecSet<Product>.Create(NewDir(), options => options
             .WithVectorIndex(p => p.Name, new HnswIndexParam())));
     }
+
+    [Fact]
+    public void EmptyOrNullByteFilterRejectedAtEfLayer()
+    {
+        using ZvecSet<Product> set = ZvecSet<Product>.Create(NewDir());
+        set.Upsert(new Product { Sku = "f1", Name = "n", Price = 1, Stock = 1, Embedding = [1, 0, 0, 0] });
+
+        Assert.Throws<ArgumentException>(() => set.Search([1, 0, 0, 0], filter: ""));
+        Assert.Throws<ArgumentException>(() => set.Search([1, 0, 0, 0], filter: "Price > 1\0"));
+    }
 }

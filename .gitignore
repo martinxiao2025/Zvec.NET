@@ -2,7 +2,9 @@ bin/
 obj/
 build/
 *.user
-test-output.log
+*.log
 *.nupkg
 .idea/
 .vs/
+.mimosa/
+.zcode/
