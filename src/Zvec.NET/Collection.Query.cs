@@ -37,10 +37,9 @@ public sealed unsafe partial class Collection
 
         // 稀疏单路：C API 的单路查询无法表达稀疏向量（VectorClause 稀疏缓冲无设置入口），
         // 且 MultiQuery 要求至少 2 路 —— 复制为两路相同子查询后用 RRF 合并（结果等价原序）。
-        if (queries.Count == 1 && IsSparseQuery(queries[0]))
+        if (queries.Count == 1)
         {
-            return ExecuteMultiQueryNative([queries[0], queries[0]], new RrfReRanker(),
-                topk, safeFilter, includeVector, outputFields);
+            return ExecuteSingleOrSparse(queries[0], topk, safeFilter, includeVector, outputFields);
         }
 
         // 多路 → MultiQuery。
@@ -123,7 +122,7 @@ public sealed unsafe partial class Collection
         }
 
         using var arena = new NativeArena();
-        byte** nativeFields = arena.AllocUtf8Array([.. outputFields], out nuint count);
+        byte** nativeFields = arena.AllocUtf8Array(outputFields, out nuint count);
         NativeUtil.ThrowIfError(NativeMethods.zvec_vector_query_set_output_fields(nativeQuery, nativeFields, count));
     }
 
@@ -158,20 +157,56 @@ public sealed unsafe partial class Collection
 
     private object ResolveVectorById(string id, string fieldName)
     {
-        Doc doc = FetchInternal([id], includeVector: true, outputFields: [fieldName])[id]
-            ?? throw new ArgumentException($"文档 {id} 不存在，无法以其作为查询向量来源。", nameof(id));
-        return doc.Vectors[fieldName]
-            ?? throw new ArgumentException($"文档 {id} 缺少向量字段 {fieldName}。", nameof(id));
+        Dictionary<string, Doc> fetched = FetchInternal([id], includeVector: true, outputFields: [fieldName]);
+        if (!fetched.TryGetValue(id, out Doc? doc))
+        {
+            throw new ArgumentException($"文档 {id} 不存在，无法以其作为查询向量来源。", nameof(id));
+        }
+
+        return doc.Vectors.TryGetValue(fieldName, out object? vector) && vector is not null
+            ? vector
+            : throw new ArgumentException($"文档 {id} 缺少向量字段 {fieldName}。", nameof(id));
     }
 
     private delegate int SetVectorDelegate(IntPtr query, void* data, nuint size);
 
     private void SetDenseQueryVector(SetVectorDelegate setter, IntPtr nativeQuery, object vectorValue, string fieldName)
     {
-        byte[] encoded = DocCodec.EncodeDenseVectorBytes(vectorValue, GetVectorDataType(fieldName));
-        fixed (byte* p = encoded)
+        // 查询是最高频路径：字段类型与值类型匹配时直接 fixed 原数组零拷贝（对齐写路径 EncodeVector），
+        // 其余可枚举形态回退到编码复制路径。
+        switch (GetVectorDataType(fieldName), vectorValue)
         {
-            NativeUtil.ThrowIfError(setter(nativeQuery, p, (nuint)encoded.Length));
+            case (DataType.VectorFp32, float[] v):
+                fixed (float* p = v)
+                {
+                    NativeUtil.ThrowIfError(setter(nativeQuery, p, (nuint)(v.Length * sizeof(float))));
+                }
+                return;
+            case (DataType.VectorFp64, double[] v):
+                fixed (double* p = v)
+                {
+                    NativeUtil.ThrowIfError(setter(nativeQuery, p, (nuint)(v.Length * sizeof(double))));
+                }
+                return;
+            case (DataType.VectorFp16, Half[] v):
+                fixed (Half* p = v)
+                {
+                    NativeUtil.ThrowIfError(setter(nativeQuery, p, (nuint)(v.Length * sizeof(Half))));
+                }
+                return;
+            case (DataType.VectorInt8, sbyte[] v):
+                fixed (sbyte* p = v)
+                {
+                    NativeUtil.ThrowIfError(setter(nativeQuery, p, (nuint)v.Length));
+                }
+                return;
+            default:
+                byte[] encoded = DocCodec.EncodeDenseVectorBytes(vectorValue, GetVectorDataType(fieldName));
+                fixed (byte* p = encoded)
+                {
+                    NativeUtil.ThrowIfError(setter(nativeQuery, p, (nuint)encoded.Length));
+                }
+                return;
         }
     }
 
@@ -271,7 +306,7 @@ public sealed unsafe partial class Collection
         }
 
         using var arena = new NativeArena();
-        byte** nativeFields = arena.AllocUtf8Array([.. outputFields], out nuint count);
+        byte** nativeFields = arena.AllocUtf8Array(outputFields, out nuint count);
         NativeUtil.ThrowIfError(NativeMethods.zvec_multi_query_set_output_fields(multiQuery, nativeFields, count));
     }
 

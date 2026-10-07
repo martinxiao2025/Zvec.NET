@@ -53,7 +53,8 @@ public sealed class HnswRabitqQueryParam : QueryParam
     }
 }
 
-/// <summary>IVF 查询参数。</summary>
+/// <summary>IVF 查询参数。
+/// 注意：v0.7.0 C API 的创建入口未暴露 Radius 与 IsLinear，继承自基类的这两个属性不生效（保留以对齐后续版本）。</summary>
 public sealed class IvfQueryParam : QueryParam
 {
     /// <summary>探测的聚类数（默认 10）。</summary>
@@ -61,8 +62,8 @@ public sealed class IvfQueryParam : QueryParam
 
     /// <summary>构造 IVF 查询参数。</summary>
     /// <param name="nProbe">探测的聚类数。</param>
-    /// <param name="radius">搜索半径。</param>
-    /// <param name="isLinear">是否线性检索。</param>
+    /// <param name="radius">搜索半径（当前版本不生效）。</param>
+    /// <param name="isLinear">是否线性检索（当前版本不生效）。</param>
     /// <param name="isUsingRefiner">是否使用精排 refiner。</param>
     public IvfQueryParam(int nProbe = 10, float radius = 0f, bool isLinear = false, bool isUsingRefiner = false)
     {
@@ -100,15 +101,16 @@ public sealed class IvfRabitqQueryParam : QueryParam
     }
 }
 
-/// <summary>Flat 查询参数。</summary>
+/// <summary>Flat 查询参数。
+/// 注意：v0.7.0 C API 的创建入口未暴露 Radius 与 IsLinear，继承自基类的这两个属性不生效（保留以对齐后续版本）。</summary>
 public sealed class FlatQueryParam : QueryParam
 {
     /// <summary>refiner 候选扩展倍数（默认 10）。</summary>
     public float ScaleFactor { get; set; } = 10f;
 
     /// <summary>构造 Flat 查询参数。</summary>
-    /// <param name="radius">搜索半径。</param>
-    /// <param name="isLinear">是否线性检索。</param>
+    /// <param name="radius">搜索半径（当前版本不生效）。</param>
+    /// <param name="isLinear">是否线性检索（当前版本不生效）。</param>
     /// <param name="isUsingRefiner">是否使用精排 refiner。</param>
     /// <param name="scaleFactor">refiner 候选扩展倍数。</param>
     public FlatQueryParam(float radius = 0f, bool isLinear = false, bool isUsingRefiner = false, float scaleFactor = 10f)
@@ -140,7 +142,8 @@ public sealed class VamanaQueryParam : QueryParam
     }
 }
 
-/// <summary>DiskANN 查询参数。</summary>
+/// <summary>DiskANN 查询参数。
+/// 注意：v0.7.0 C API 的创建入口仅接受 ListSize，继承自基类的 Radius/IsLinear/IsUsingRefiner 均不生效（保留以对齐后续版本）。</summary>
 public sealed class DiskAnnQueryParam : QueryParam
 {
     /// <summary>beam search 候选队列大小（默认 300）。</summary>
@@ -148,9 +151,9 @@ public sealed class DiskAnnQueryParam : QueryParam
 
     /// <summary>构造 DiskANN 查询参数。</summary>
     /// <param name="listSize">beam search 候选队列大小。</param>
-    /// <param name="radius">搜索半径。</param>
-    /// <param name="isLinear">是否线性检索。</param>
-    /// <param name="isUsingRefiner">是否使用精排 refiner。</param>
+    /// <param name="radius">搜索半径（当前版本不生效）。</param>
+    /// <param name="isLinear">是否线性检索（当前版本不生效）。</param>
+    /// <param name="isUsingRefiner">是否使用精排 refiner（当前版本不生效）。</param>
     public DiskAnnQueryParam(int listSize = 300, float radius = 0f, bool isLinear = false, bool isUsingRefiner = false)
     {
         ListSize = listSize;
@@ -160,7 +163,8 @@ public sealed class DiskAnnQueryParam : QueryParam
     }
 }
 
-/// <summary>FTS 全文查询参数。</summary>
+/// <summary>FTS 全文查询参数。
+/// 注意：v0.7.0 C API 的创建入口仅接受默认算子，继承自基类的 Radius/IsLinear/IsUsingRefiner 均不生效（保留以对齐后续版本）。</summary>
 public sealed class FtsQueryParam : QueryParam
 {
     /// <summary>裸词间默认布尔算子："OR"（默认）/ "AND"。</summary>

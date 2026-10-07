@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 namespace Zvec.NET.Embedding;
 
@@ -10,7 +11,7 @@ namespace Zvec.NET.Embedding;
 public sealed class BM25Embedding : ISparseEmbeddingFunction
 {
     private readonly Dictionary<string, uint> _vocabulary = [];
-    private readonly Dictionary<uint, double> _idf = [];
+    private readonly double[] _idf;
     private readonly int _corpusSize;
     private readonly double _averageDocLength;
     private readonly double _k1;
@@ -61,12 +62,13 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
 
         _averageDocLength = totalLength / (double)documents.Length;
 
+        _idf = new double[documentFrequency.Count];
         uint nextId = 0;
         foreach (KeyValuePair<string, int> pair in documentFrequency)
         {
             uint id = nextId++;
             _vocabulary[pair.Key] = id;
-            // BM25+ 平滑 IDF：ln(1 + (N - df + 0.5)/(df + 0.5))
+            // BM25+ 平滑 IDF：ln(1 + (N - df + 0.5)/(df + 0.5))；词项 ID 为 0..N-1 稠密编号，数组直取。
             _idf[id] = Math.Log(1.0 + (_corpusSize - pair.Value + 0.5) / (pair.Value + 0.5));
         }
     }
@@ -84,7 +86,8 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
         ArgumentException.ThrowIfNullOrEmpty(input);
 
         Dictionary<string, int> termFreqs = CountTokens(Tokenize(input));
-        double docLength = _queryMode ? _averageDocLength : termFreqs.Values.Sum();
+        // 仅 document 模式使用文档长度做归一化；query 模式只按 IDF 加权。
+        double docLength = termFreqs.Values.Sum();
 
         var entries = new List<KeyValuePair<uint, float>>();
         foreach (KeyValuePair<string, int> pair in termFreqs)
@@ -108,7 +111,8 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
         return new SparseVector([.. entries.Select(e => e.Key)], [.. entries.Select(e => e.Value)]);
     }
 
-    /// <summary>CJK 字符按单字切分；其他表意文字（假名等）单字成词；字母/数字按连续词元切分（小写化，索引切片）。</summary>
+    /// <summary>CJK 字符按单字切分；其他表意文字（假名等）单字成词；字母/数字按连续词元切分（小写化，索引切片）。
+    /// 按 Unicode 码位（Rune）迭代：增补平面字符（如 CJK 扩展 B）作为整体成词，不会被拆成孤立代理项。</summary>
     internal static IReadOnlyList<string> Tokenize(string text)
     {
         List<string> tokens = [];
@@ -125,15 +129,16 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
             start = -1;
         }
 
-        for (int i = 0; i < lowered.Length; i++)
+        int i = 0;
+        while (i < lowered.Length)
         {
-            char ch = lowered[i];
-            if (IsCjk(ch) || CharUnicodeInfo.GetUnicodeCategory(ch) == UnicodeCategory.OtherLetter)
+            Rune.DecodeFromUtf16(lowered.AsSpan(i), out Rune rune, out int consumed);
+            if (IsCjk(rune) || Rune.GetUnicodeCategory(rune) == UnicodeCategory.OtherLetter)
             {
                 Flush(i);
-                tokens.Add(lowered.Substring(i, 1));
+                tokens.Add(lowered.Substring(i, consumed));
             }
-            else if (char.IsLetterOrDigit(ch))
+            else if (Rune.IsLetterOrDigit(rune))
             {
                 if (start < 0)
                 {
@@ -144,15 +149,17 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
             {
                 Flush(i);
             }
+
+            i += consumed;
         }
 
         Flush(lowered.Length);
         return tokens;
     }
 
-    private static bool IsCjk(char ch) => ch is >= '\u4E00' and <= '\u9FFF'
-        or >= '\u3400' and <= '\u4DBF'
-        or >= '\uF900' and <= '\uFAFF';
+    private static bool IsCjk(Rune rune) => rune.Value is >= 0x4E00 and <= 0x9FFF
+        or >= 0x3400 and <= 0x4DBF
+        or >= 0xF900 and <= 0xFAFF;
 
     private static Dictionary<string, int> CountTokens(IReadOnlyList<string> tokens)
     {

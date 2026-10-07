@@ -1,20 +1,28 @@
-using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Zvec.NET.EntityFrameworkCore;
 
 /// <summary>
 /// 实体类型 ↔ Zvec 字段的反射映射模型（每实体类型缓存一份）。
-/// 键：<see cref="VectorKeyAttribute"/> 或约定 "Id"/"&lt;实体名&gt;Id"；
+/// 键：<see cref="VectorKeyAttribute"/>（显式标注优先）或约定 "Id"/"&lt;实体名&gt;Id"；
 /// 向量：<see cref="VectorFieldAttribute"/>；标量按类型自动映射；<see cref="VectorIgnoredAttribute"/> 排除。
 /// </summary>
-internal sealed class EntityModel<TEntity> where TEntity : class
+internal sealed class EntityModel<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TEntity>
+    where TEntity : class
 {
-    private static readonly ConcurrentDictionary<Type, object> Cache = [];
+    private static EntityModel<TEntity>? _instance;
 
-    internal static EntityModel<TEntity> Instance => (EntityModel<TEntity>)Cache.GetOrAdd(
-        typeof(TEntity), _ => new EntityModel<TEntity>());
+    /// <summary>惰性单例；构造异常不缓存（下次访问重试，错误语义稳定），并发首触达收敛到单实例。</summary>
+    internal static EntityModel<TEntity> Instance => _instance ?? CreateCached();
+
+    private static EntityModel<TEntity> CreateCached()
+    {
+        var created = new EntityModel<TEntity>();
+        Interlocked.CompareExchange(ref _instance, created, null);
+        return Volatile.Read(ref _instance)!;
+    }
 
     public string CollectionName { get; }
 
@@ -44,10 +52,18 @@ internal sealed class EntityModel<TEntity> where TEntity : class
 
         List<PropertyMapping> scalars = [];
         List<PropertyMapping> vectors = [];
-        PropertyMapping? key = null;
+        PropertyMapping? attributeKey = null;
+        PropertyMapping? conventionKey = null;
+        var seenNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
+            if (!seenNames.Add(property.Name))
+            {
+                throw new InvalidOperationException(
+                    $"实体 {type.Name} 存在同名属性 {property.Name}（new 隐藏继承成员），无法建立确定映射。");
+            }
+
             if (property.GetCustomAttribute<VectorIgnoredAttribute>() is not null || !property.CanRead || !property.CanWrite)
             {
                 continue;
@@ -55,31 +71,44 @@ internal sealed class EntityModel<TEntity> where TEntity : class
 
             if (property.GetCustomAttribute<VectorKeyAttribute>() is not null)
             {
-                key ??= new PropertyMapping(property, MapKeyProperty(property));
+                if (attributeKey.HasValue)
+                {
+                    throw new InvalidOperationException(
+                        $"实体 {type.Name} 标注了多个 [VectorKey]（{attributeKey.Value.Property.Name} 与 {property.Name}），只能有一个主键。");
+                }
+
+                attributeKey = new PropertyMapping(property, MapKeyProperty(property), 0);
                 continue;
             }
 
             if (property.GetCustomAttribute<VectorFieldAttribute>() is { } vectorAttr)
             {
-                vectors.Add(new PropertyMapping(property, MapVectorProperty(property, vectorAttr)));
+                vectors.Add(new PropertyMapping(property, MapVectorProperty(property, vectorAttr), vectorAttr.Dimension));
                 continue;
             }
 
             if (IsKeyByConvention(property))
             {
-                key ??= new PropertyMapping(property, MapKeyProperty(property));
+                if (conventionKey.HasValue)
+                {
+                    throw new InvalidOperationException(
+                        $"实体 {type.Name} 同时存在约定键 {conventionKey.Value.Property.Name} 与 {property.Name}，请用 [VectorKey] 显式指定。");
+                }
+
+                conventionKey = new PropertyMapping(property, MapKeyProperty(property), 0);
                 continue;
             }
 
             DataType? scalarType = MapScalarProperty(property);
             if (scalarType.HasValue)
             {
-                scalars.Add(new PropertyMapping(property, scalarType.Value));
+                scalars.Add(new PropertyMapping(property, scalarType.Value, 0));
             }
             // 其余类型静默忽略（复杂对象不参与同步）。
         }
 
-        Key = key ?? throw new InvalidOperationException(
+        // 显式 [VectorKey] 优先于命名约定，避免约定键静默吞掉显式标注。
+        Key = attributeKey ?? conventionKey ?? throw new InvalidOperationException(
             $"实体 {type.Name} 缺少主键：请用 {nameof(VectorKeyAttribute)} 标注或提供 Id 属性。");
         if (vectors.Count == 0)
         {
@@ -104,10 +133,15 @@ internal sealed class EntityModel<TEntity> where TEntity : class
 
     private static DataType MapKeyProperty(PropertyInfo property)
     {
-        if (!SupportedKeyTypes.Contains(property.PropertyType))
+        Type propertyType = property.PropertyType;
+        if (!SupportedKeyTypes.Contains(propertyType))
         {
+            string actual = propertyType.IsGenericType
+                && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>)
+                    ? $"可空 {Nullable.GetUnderlyingType(propertyType)!.Name}?（主键不应可空）"
+                    : propertyType.Name;
             throw new NotSupportedException(
-                $"主键 {property.Name} 的类型 {property.PropertyType.Name} 不受支持（支持 string/int/long/Guid）。");
+                $"主键 {property.Name} 的类型不受支持（实际 {actual}；支持 string/int/long/Guid）。");
         }
 
         // 键统一以字符串形式作为 zvec 主键存储。
@@ -123,6 +157,11 @@ internal sealed class EntityModel<TEntity> where TEntity : class
 
         if (property.PropertyType == typeof(SparseVector))
         {
+            if (attribute.Dimension != 0)
+            {
+                throw new NotSupportedException($"稀疏向量属性 {property.Name} 不需要 Dimension（保持 0）。");
+            }
+
             return DataType.SparseVectorFp32;
         }
 
@@ -143,23 +182,38 @@ internal sealed class EntityModel<TEntity> where TEntity : class
         : property.PropertyType == typeof(double[]) ? DataType.ArrayDouble
         : null;
 
-    public static int DimensionOf(PropertyMapping vector) => vector.Property.GetCustomAttribute<VectorFieldAttribute>()?.Dimension ?? 0;    private Expression<Func<TEntity, string>> BuildKeyExpression()
+    private Expression<Func<TEntity, string>> BuildKeyExpression()
     {
-        // string 键直接取属性；数值/Guid 键调用实例 ToString()（EF 关系库可翻译为 CAST/CONVERT）。
+        // string 键直接取属性；数值/Guid 键调用实例 ToString()（写入侧 KeyGetter 与查询侧共用本表达式，两侧天然对齐）。
+        // 键类型为封闭集合（int/long/Guid），经 typeof(具体类型) 取 MethodInfo 满足裁剪分析器。
         ParameterExpression parameter = Expression.Parameter(typeof(TEntity), "e");
         Expression body = Expression.Property(parameter, Key.Property);
         if (Key.Property.PropertyType != typeof(string))
         {
-            MethodInfo toString = Key.Property.PropertyType.GetMethod(nameof(ToString), Type.EmptyTypes)!;
+            MethodInfo toString = GetKeyToStringMethod(Key.Property.PropertyType)
+                ?? throw new InvalidOperationException($"键类型 {Key.Property.PropertyType.Name} 缺少 ToString()。");
             body = Expression.Call(body, toString);
         }
 
         return Expression.Lambda<Func<TEntity, string>>(body, parameter);
     }
 
+    private static MethodInfo? GetKeyToStringMethod(Type keyType) => keyType == typeof(int)
+        ? typeof(int).GetMethod(nameof(int.ToString), Type.EmptyTypes)
+        : keyType == typeof(long)
+            ? typeof(long).GetMethod(nameof(long.ToString), Type.EmptyTypes)
+            : typeof(Guid).GetMethod(nameof(Guid.ToString), Type.EmptyTypes);
+
     internal Doc ToDoc(TEntity entity)
     {
-        var doc = new Doc(KeyGetter(entity));
+        string id = KeyGetter(entity);
+        if (string.IsNullOrEmpty(id))
+        {
+            throw new ArgumentException(
+                $"实体 {typeof(TEntity).Name} 的键属性 {Key.Property.Name} 产生了 null/空主键，无法写入向量集合。", nameof(entity));
+        }
+
+        var doc = new Doc(id);
         foreach (PropertyMapping scalar in Scalars)
         {
             doc.Fields[scalar.Property.Name] = scalar.Property.GetValue(entity);
@@ -189,7 +243,7 @@ internal sealed class EntityModel<TEntity> where TEntity : class
         foreach (PropertyMapping vector in Vectors)
         {
             schema.AddVector(new VectorSchema(vector.Property.Name, vector.DataType,
-                (uint)DimensionOf(vector), nullable: IsNullable(vector.Property),
+                (uint)vector.Dimension, nullable: IsNullable(vector.Property),
                 indexParam: vectorIndexes?.GetValueOrDefault(vector.Property.Name)));
         }
 
@@ -211,5 +265,5 @@ internal sealed class EntityModel<TEntity> where TEntity : class
         }
     }
 
-    internal readonly record struct PropertyMapping(PropertyInfo Property, DataType DataType);
+    internal readonly record struct PropertyMapping(PropertyInfo Property, DataType DataType, int Dimension);
 }

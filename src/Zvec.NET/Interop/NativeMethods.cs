@@ -19,10 +19,6 @@ internal static unsafe partial class NativeMethods
     internal static partial IntPtr zvec_get_version();
 
     [LibraryImport(Lib)]
-    [return: MarshalAs(UnmanagedType.U1)]
-    internal static partial bool zvec_check_version(int major, int minor, int patch);
-
-    [LibraryImport(Lib)]
     internal static partial int zvec_get_version_major();
 
     [LibraryImport(Lib)]
@@ -39,9 +35,6 @@ internal static unsafe partial class NativeMethods
 
     [LibraryImport(Lib)]
     internal static partial void zvec_clear_error();
-
-    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial IntPtr zvec_error_code_to_string(int error_code);
 
     // =========================================================================
     // 全局配置
@@ -60,9 +53,6 @@ internal static unsafe partial class NativeMethods
 
     [LibraryImport(Lib)]
     internal static partial void zvec_config_log_destroy(IntPtr config);
-
-    [LibraryImport(Lib)]
-    internal static partial int zvec_config_log_set_level(IntPtr config, int level);
 
     [LibraryImport(Lib)]
     internal static partial IntPtr zvec_config_data_create();
@@ -406,12 +396,6 @@ internal static unsafe partial class NativeMethods
     internal static partial void zvec_field_schema_destroy(IntPtr schema);
 
     [LibraryImport(Lib)]
-    internal static partial int zvec_field_schema_set_nullable(IntPtr schema, [MarshalAs(UnmanagedType.U1)] bool nullable);
-
-    [LibraryImport(Lib)]
-    internal static partial int zvec_field_schema_set_dimension(IntPtr schema, uint dimension);
-
-    [LibraryImport(Lib)]
     internal static partial int zvec_field_schema_set_index_params(IntPtr schema, IntPtr index_params);
 
     [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
@@ -451,20 +435,7 @@ internal static unsafe partial class NativeMethods
     internal static partial int zvec_collection_schema_add_field(IntPtr schema, IntPtr field);
 
     [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial int zvec_collection_schema_add_index(IntPtr schema, string field_name, IntPtr index_params);
-
-    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial int zvec_collection_schema_drop_index(IntPtr schema, string field_name);
-
-    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
-    [return: MarshalAs(UnmanagedType.U1)]
-    internal static partial bool zvec_collection_schema_has_field(IntPtr schema, string field_name);
-
-    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial IntPtr zvec_collection_schema_get_field(IntPtr schema, string field_name);
-
-    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial IntPtr zvec_collection_schema_get_vector_field(IntPtr schema, string field_name);
 
     [LibraryImport(Lib)]
     internal static partial int zvec_collection_schema_get_all_field_names(IntPtr schema, out IntPtr names, out nuint count);
@@ -525,32 +496,16 @@ internal static unsafe partial class NativeMethods
     // =========================================================================
 
     [LibraryImport(Lib)]
-    internal static partial int zvec_collection_insert(
-        IntPtr collection, IntPtr* docs, nuint doc_count, out nuint success_count, out nuint error_count);
-
-    [LibraryImport(Lib)]
     internal static partial int zvec_collection_insert_with_results(
         IntPtr collection, IntPtr* docs, nuint doc_count, out IntPtr results, out nuint result_count);
-
-    [LibraryImport(Lib)]
-    internal static partial int zvec_collection_update(
-        IntPtr collection, IntPtr* docs, nuint doc_count, out nuint success_count, out nuint error_count);
 
     [LibraryImport(Lib)]
     internal static partial int zvec_collection_update_with_results(
         IntPtr collection, IntPtr* docs, nuint doc_count, out IntPtr results, out nuint result_count);
 
     [LibraryImport(Lib)]
-    internal static partial int zvec_collection_upsert(
-        IntPtr collection, IntPtr* docs, nuint doc_count, out nuint success_count, out nuint error_count);
-
-    [LibraryImport(Lib)]
     internal static partial int zvec_collection_upsert_with_results(
         IntPtr collection, IntPtr* docs, nuint doc_count, out IntPtr results, out nuint result_count);
-
-    [LibraryImport(Lib)]
-    internal static partial int zvec_collection_delete(
-        IntPtr collection, byte** pks, nuint pk_count, out nuint success_count, out nuint error_count);
 
     [LibraryImport(Lib)]
     internal static partial int zvec_collection_delete_with_results(
@@ -644,10 +599,6 @@ internal static unsafe partial class NativeMethods
 
     [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int zvec_doc_get_field_names(IntPtr doc, out IntPtr field_names, out nuint count);
-
-    [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial int zvec_doc_get_field_value_basic(
-        IntPtr doc, string field_name, uint field_type, void* value_buffer, nuint buffer_size);
 
     [LibraryImport(Lib, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int zvec_doc_get_field_value_pointer(

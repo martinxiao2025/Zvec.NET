@@ -91,7 +91,14 @@ var bm25 = new BM25Embedding(["语料一", "语料二"], encodingType: "query");
 SparseVector sparse = bm25.Embed("查询");
 ```
 
-> **安全策略**：HTTP 嵌入客户端仅允许 http/https，且发请求前校验目标 host —— localhost、环回、私有、链路本地与保留地址一律拒绝（因此不支持指向本地推理服务的 base_url）。
+> **安全策略**：HTTP 嵌入客户端仅允许 http/https，且默认拒绝 localhost、环回、私有、链路本地与保留地址（防 SSRF）。**本地部署场景**（Ollama、vLLM、LM Studio 等）可显式传入 `allowLocalEndpoint: true` 放行，此时协议限制仍然生效：
+>
+> ```csharp
+> var embedder = new OpenAIEmbedding(
+>     model: "bge-m3",
+>     baseUrl: "http://localhost:11434/v1",   // Ollama 的 OpenAI 兼容端点
+>     allowLocalEndpoint: true);
+> ```
 
 ## EF Core 集成（Zvec.NET.EntityFrameworkCore）
 
@@ -198,15 +205,15 @@ src/Zvec.NET/                       # 核心包：P/Invoke 绑定（对照 c_api
 ├── Embedding/                      #   HTTP 嵌入客户端 + 本地 BM25
 └── runtimes/win-x64/native/
 src/Zvec.NET.EntityFrameworkCore/  # EF Core 集成包：实体注解映射 + ZvecSet<TEntity> + 混合检索
-examples/Zvec.NET.Demo/             # 完整示例
-tests/                              # 测试（核心 54 项 + EF 集成 7 项，真实调用原生库）
+examples/Zvec.NET.Demo/             # 完整示例（含本地 Ollama bge-m3 语义检索，未安装时自动跳过）
+tests/                              # 测试（核心 73 项 + EF 集成 8 项，真实调用原生库）
 scripts/fetch-native.ps1            # 从 GitHub Releases 拉取原生 SDK
 ```
 
 ## 开发
 
 ```
-dotnet test               # 运行全部测试
+dotnet test               # 运行全部测试（Ollama E2E: dotnet test --filter Category=RequiresOllama）
 dotnet run --project examples/Zvec.NET.Demo
 dotnet pack src/Zvec.NET  # 打 NuGet 包
 ```

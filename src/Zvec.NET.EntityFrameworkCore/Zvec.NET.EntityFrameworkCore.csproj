@@ -14,6 +14,9 @@
     <PackageProjectUrl>https://zvec.org</PackageProjectUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- 裁剪/NativeAOT 兼容分析器：泛型参数已贯通 DynamicallyAccessedMembers 注解，
+         注解缺失会在库构建期以警告暴露（EF Core 本身的 AOT 支持以 EF 版本为准）。 -->
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

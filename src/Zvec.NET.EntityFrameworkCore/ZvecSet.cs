@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 
 // CA1000（泛型类型上不宜声明静态成员）：Create/Open 为按实体类型的工厂方法，
@@ -6,11 +7,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Zvec.NET.EntityFrameworkCore;
 
+/// <summary>实体类型对裁剪器的成员保留需求：属性映射（反射 schema）+ EF Core Set&lt;T&gt; 的要求集合。</summary>
+internal static class VectorTrimming
+{
+    public const DynamicallyAccessedMemberTypes EntityMembers =
+        DynamicallyAccessedMemberTypes.PublicProperties
+        | DynamicallyAccessedMemberTypes.PublicConstructors
+        | DynamicallyAccessedMemberTypes.NonPublicConstructors
+        | DynamicallyAccessedMemberTypes.PublicFields
+        | DynamicallyAccessedMemberTypes.NonPublicFields
+        | DynamicallyAccessedMemberTypes.NonPublicProperties
+        | DynamicallyAccessedMemberTypes.Interfaces;
+}
+
 /// <summary>
 /// 类型化实体向量集合：基于 Zvec 的 <c>Collection</c>，按实体注解映射同步与检索。
 /// 通过 <c>ZvecSet&lt;TEntity&gt;.Create</c>（建集合并生成 schema）或 <c>Open</c>（打开已有集合）获取。
 /// </summary>
-public interface IZvecSet<TEntity> : IDisposable
+public interface IZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMembers)] TEntity> : IDisposable
     where TEntity : class
 {
     /// <summary>底层 Zvec 集合（可使用全部原生能力）。</summary>
@@ -27,6 +41,16 @@ public interface IZvecSet<TEntity> : IDisposable
     /// <summary>Upsert 一批实体到向量集合。</summary>
     /// <param name="entities">实体集合。</param>
     WriteResult[] UpsertRange(IEnumerable<TEntity> entities);
+
+    /// <summary>异步 Upsert 单个实体到向量集合。</summary>
+    /// <param name="entity">实体实例。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    Task<WriteResult> UpsertAsync(TEntity entity, CancellationToken cancellationToken = default);
+
+    /// <summary>异步 Upsert 一批实体到向量集合。</summary>
+    /// <param name="entities">实体集合。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    Task<WriteResult[]> UpsertRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
 
     /// <summary>按实体主键删除对应文档。</summary>
     /// <param name="entity">实体实例。</param>
@@ -62,7 +86,7 @@ public interface IZvecSet<TEntity> : IDisposable
 
 /// <summary>IZvecSet 的默认实现。</summary>
 /// <typeparam name="TEntity">实体类型。</typeparam>
-public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
+public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMembers)] TEntity> : IZvecSet<TEntity>
     where TEntity : class
 {
     private readonly EntityModel<TEntity> _model = EntityModel<TEntity>.Instance;
@@ -79,7 +103,7 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
     {
         var options = new ZvecSetOptions<TEntity>();
         configure?.Invoke(options);
-        EnsureEngineInitialized();
+        ZvecEngine.EnsureInitialized();
 
         CollectionSchema schema = EntityModel<TEntity>.Instance.BuildSchema(options.VectorIndexes);
         return new ZvecSet<TEntity>(global::Zvec.NET.Zvec.CreateAndOpen(path, schema, options.CollectionOption));
@@ -90,16 +114,8 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
     /// <param name="option">打开选项（只读/mmap 等，可选）。</param>
     public static ZvecSet<TEntity> Open(string path, CollectionOption? option = null)
     {
-        EnsureEngineInitialized();
+        ZvecEngine.EnsureInitialized();
         return new ZvecSet<TEntity>(global::Zvec.NET.Zvec.Open(path, option));
-    }
-
-    private static void EnsureEngineInitialized()
-    {
-        if (!global::Zvec.NET.Zvec.IsInitialized)
-        {
-            global::Zvec.NET.Zvec.Init();
-        }
     }
 
     /// <inheritdoc/>
@@ -117,6 +133,20 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
     {
         ArgumentNullException.ThrowIfNull(entities);
         return Underlying.Upsert(entities.Select(BuildDoc));
+    }
+
+    /// <inheritdoc/>
+    public Task<WriteResult> UpsertAsync(TEntity entity, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        return Underlying.UpsertAsync(BuildDoc(entity), cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<WriteResult[]> UpsertRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        return Underlying.UpsertAsync(entities.Select(BuildDoc), cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -163,13 +193,14 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
         DbContext context, float[] vector, int topk = 10, string? filter = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
+        cancellationToken.ThrowIfCancellationRequested();
         IReadOnlyList<SearchHit> hits = Search(vector, topk, filter);
         if (hits.Count == 0)
         {
             return [];
         }
 
-        // 键在向量集合与 EF 实体间以字符串对齐（数值/Guid 键用不变文化格式化）。
+        // 键在向量集合与 EF 实体间以字符串对齐（写入侧 KeyGetter 与本谓词共用同一表达式）。
         List<string> ids = [.. hits.Select(h => h.Id)];
         var predicate = _model.BuildKeyInExpression(ids);
         Dictionary<string, TEntity> entities = await context.Set<TEntity>()
@@ -209,7 +240,7 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
                 }
             }
 
-            throw new ArgumentException($"属性 {fieldName} 不是 {typeof(TEntity).Name} 的向量属性。");
+            throw new ArgumentException($"属性 {fieldName} 不是 {typeof(TEntity).Name} 的向量属性。", nameof(fieldName));
         }
 
         foreach (EntityModel<TEntity>.PropertyMapping vector in _model.Vectors)

@@ -41,24 +41,32 @@ public sealed unsafe partial class Collection
         nuint fieldCount = 0;
         byte** fields = outputFields is null
             ? null
-            : arena.AllocUtf8Array(outputFields.ToArray(), out fieldCount);
+            : arena.AllocUtf8Array(outputFields, out fieldCount);
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_fetch(
             lease.Ptr, keys, count, fields, fieldCount, includeVector, out IntPtr documents, out nuint foundCount));
 
+        // 引擎在全部主键未命中时可能返回 NULL 指针 + count=0：先判空再拷贝。
         var docPointers = new IntPtr[(int)foundCount];
-        Marshal.Copy(documents, docPointers, 0, (int)foundCount);
         Dictionary<string, Doc> result = new((int)foundCount);
         try
         {
+            if (foundCount > 0)
+            {
+                Marshal.Copy(documents, docPointers, 0, (int)foundCount);
+            }
+
             foreach (IntPtr docPtr in docPointers)
             {
-                Doc doc = DocCodec.ReadDoc(docPtr, Schema);
+                Doc doc = DocCodec.ReadDoc(docPtr, Schema, scored: false);
                 result[doc.Id] = doc;
             }
         }
         finally
         {
-            NativeMethods.zvec_docs_free(documents, foundCount);
+            if (documents != IntPtr.Zero)
+            {
+                NativeMethods.zvec_docs_free(documents, foundCount);
+            }
         }
 
         return result;

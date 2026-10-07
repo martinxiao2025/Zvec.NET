@@ -192,14 +192,14 @@ internal static unsafe class ParamBuilder
         NativeUtil.ThrowIfNull(nativeSchema, "collection schema");
         try
         {
-            foreach (FieldSchema field in schema.Fields)
+            void AddField(string name, uint dataType, bool nullable, uint dimension, IndexParam? indexParam)
             {
-                IntPtr nativeField = BuildFieldSchema(field.Name, (uint)field.DataType, field.Nullable, 0);
+                IntPtr nativeField = BuildFieldSchema(name, dataType, nullable, dimension);
                 try
                 {
-                    if (field.IndexParam is not null)
+                    if (indexParam is not null)
                     {
-                        IntPtr indexParams = BuildIndexParam(field.IndexParam);
+                        IntPtr indexParams = BuildIndexParam(indexParam);
                         try
                         {
                             NativeUtil.ThrowIfError(NativeMethods.zvec_field_schema_set_index_params(nativeField, indexParams));
@@ -218,30 +218,14 @@ internal static unsafe class ParamBuilder
                 }
             }
 
+            foreach (FieldSchema field in schema.Fields)
+            {
+                AddField(field.Name, (uint)field.DataType, field.Nullable, dimension: 0, field.IndexParam);
+            }
+
             foreach (VectorSchema vector in schema.Vectors)
             {
-                IntPtr nativeField = BuildFieldSchema(vector.Name, (uint)vector.DataType, vector.Nullable, vector.Dimension);
-                try
-                {
-                    if (vector.IndexParam is not null)
-                    {
-                        IntPtr indexParams = BuildIndexParam(vector.IndexParam);
-                        try
-                        {
-                            NativeUtil.ThrowIfError(NativeMethods.zvec_field_schema_set_index_params(nativeField, indexParams));
-                        }
-                        finally
-                        {
-                            NativeMethods.zvec_index_params_destroy(indexParams);
-                        }
-                    }
-
-                    NativeUtil.ThrowIfError(NativeMethods.zvec_collection_schema_add_field(nativeSchema, nativeField));
-                }
-                finally
-                {
-                    NativeMethods.zvec_field_schema_destroy(nativeField);
-                }
+                AddField(vector.Name, (uint)vector.DataType, vector.Nullable, vector.Dimension, vector.IndexParam);
             }
 
             IntPtr result = nativeSchema;
@@ -298,7 +282,7 @@ internal static unsafe class ParamBuilder
                     {
                         IndexParam = indexType == NativeTypes.IndexTypeUndefined ? null : new OpaqueIndexParam((IndexType)indexType),
                     };
-                    schema.Vectors.Add(vector);
+                    schema.AddVector(vector);
                 }
                 else
                 {
@@ -306,7 +290,7 @@ internal static unsafe class ParamBuilder
                     {
                         IndexParam = indexType == NativeTypes.IndexTypeUndefined ? null : new OpaqueIndexParam((IndexType)indexType),
                     };
-                    schema.Fields.Add(fieldSchema);
+                    schema.AddField(fieldSchema);
                 }
             }
         }

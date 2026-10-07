@@ -90,11 +90,17 @@ public sealed class CollectionSchema
     /// <summary>集合名。</summary>
     public string Name { get; set; }
 
-    /// <summary>标量字段列表。</summary>
+    /// <summary>标量字段列表。请经 <see cref="AddField"/> 追加（同时维护按名查找缓存）。</summary>
     public List<FieldSchema> Fields { get; } = [];
 
-    /// <summary>向量字段列表。</summary>
+    /// <summary>向量字段列表。请经 <see cref="AddVector"/> 追加（同时维护按名查找缓存）。</summary>
     public List<VectorSchema> Vectors { get; } = [];
+
+    // 按名查找缓存（与 Fields/Vectors 同步维护）：Doc 编解码热路径从 O(n) 线性扫描降为 O(1)；
+    // _names 同时覆盖标量与向量字段——同一 schema 内字段名全域唯一（与原生 add_field 语义一致）。
+    private readonly Dictionary<string, FieldSchema> _fieldMap = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, VectorSchema> _vectorMap = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _names = new(StringComparer.Ordinal);
 
     /// <summary>以集合名构造空 Schema。</summary>
     /// <param name="name">集合名。</param>
@@ -107,25 +113,39 @@ public sealed class CollectionSchema
     /// <param name="field">字段定义。</param>
     public CollectionSchema AddField(FieldSchema field)
     {
+        ArgumentNullException.ThrowIfNull(field);
+        if (!_names.Add(field.Name))
+        {
+            throw new ArgumentException($"字段名 {field.Name} 已存在。", nameof(field));
+        }
+
+        _fieldMap.Add(field.Name, field);
         Fields.Add(field);
         return this;
     }
 
     /// <summary>追加向量字段（链式）。</summary>
-    /// <param name="vector">向量字段定义。</param>
+    /// <param name="vector">字段定义。</param>
     public CollectionSchema AddVector(VectorSchema vector)
     {
+        ArgumentNullException.ThrowIfNull(vector);
+        if (!_names.Add(vector.Name))
+        {
+            throw new ArgumentException($"字段名 {vector.Name} 已存在。", nameof(vector));
+        }
+
+        _vectorMap.Add(vector.Name, vector);
         Vectors.Add(vector);
         return this;
     }
 
     /// <summary>按名查找标量字段。</summary>
     /// <param name="name">字段名。</param>
-    public FieldSchema? Field(string name) => Fields.FirstOrDefault(f => f.Name == name);
+    public FieldSchema? Field(string name) => _fieldMap.GetValueOrDefault(name);
 
     /// <summary>按名查找向量字段。</summary>
     /// <param name="name">字段名。</param>
-    public VectorSchema? Vector(string name) => Vectors.FirstOrDefault(v => v.Name == name);
+    public VectorSchema? Vector(string name) => _vectorMap.GetValueOrDefault(name);
 }
 
 internal static class SchemaUtil

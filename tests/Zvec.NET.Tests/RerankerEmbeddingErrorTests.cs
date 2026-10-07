@@ -53,6 +53,11 @@ public sealed class EmbeddingSecurityTests
     [InlineData("http://localhost:1234/v1/embeddings")]
     [InlineData("http://127.0.0.1:8080/x")]
     [InlineData("http://[::1]:9000/x")]
+    [InlineData("http://[::ffff:127.0.0.1]:9000/x")]     // IPv4-mapped 环回
+    [InlineData("http://[::ffff:10.1.2.3]/v1/x")]         // IPv4-mapped 私网
+    [InlineData("http://[64:ff9b::10.1.2.3]/x")]          // NAT64 承载私网 IPv4
+    [InlineData("http://[2002:0a01:0203::]/x")]           // 6to4 承载 10.1.2.3
+    [InlineData("http://[2001:0::5cdf]/x")]               // Teredo
     [InlineData("http://10.1.2.3/v1/x")]
     [InlineData("http://172.16.0.1/v1/x")]
     [InlineData("http://192.168.1.5/v1/x")]

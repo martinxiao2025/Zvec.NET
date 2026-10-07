@@ -7,7 +7,8 @@ namespace Zvec.NET;
 /// 已打开的集合（对齐 Python zvec.Collection）。通过 <see cref="Zvec.CreateAndOpen"/> / <see cref="Zvec.Open"/> 获取。
 /// 同步 API 直接映射原生调用；Async 版本为 Task.Run 薄包装。
 /// 托管侧对同一实例的并发调用是安全的：每次原生调用持有句柄租约（DangerousAddRef），
-/// 并发 <see cref="Close"/> 会推迟到最后一个在途调用结束（SafeHandle 引用计数语义）。
+/// 并发 <see cref="Close"/> 会推迟到最后一个在途调用结束（SafeHandle 引用计数语义）；
+/// 文档迭代（IterateDocs/IterateDocsAsync）在整个枚举期间持有租约。
 /// </summary>
 public sealed unsafe partial class Collection : IDisposable
 {

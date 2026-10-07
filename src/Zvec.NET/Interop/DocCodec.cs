@@ -351,12 +351,13 @@ internal static unsafe class DocCodec
     // 解码
     // =========================================================================
 
-    /// <summary>从原生 Doc 读取托管 Doc。schema 提供字段类型。</summary>
-    internal static Doc ReadDoc(IntPtr nativeDoc, CollectionSchema schema)
+    /// <summary>从原生 Doc 读取托管 Doc。schema 提供字段类型。
+    /// C API 无法区分"无得分"与"得分 0"：scored=true（查询结果路径）总是填充 Score——L2 完美匹配、
+    /// IP 正交等合法 0 分不会丢失；scored=false（Fetch/迭代路径）一律置 null（存储文档本无得分）。</summary>
+    internal static Doc ReadDoc(IntPtr nativeDoc, CollectionSchema schema, bool scored = true)
     {
         string id = NativeUtil.PtrToUtf8Required(NativeMethods.zvec_doc_get_pk_pointer(nativeDoc));
-        float score = NativeMethods.zvec_doc_get_score(nativeDoc);
-        var doc = new Doc(id, score == 0f && !HasScoreField(nativeDoc) ? null : score);
+        var doc = new Doc(id, scored ? NativeMethods.zvec_doc_get_score(nativeDoc) : null);
 
         NativeUtil.ThrowIfError(NativeMethods.zvec_doc_get_field_names(nativeDoc, out IntPtr namesPtr, out nuint count));
         try
@@ -369,8 +370,11 @@ internal static unsafe class DocCodec
                 string fieldName = NativeUtil.PtrToUtf8Required(namePtr);
                 if (schema.Vector(fieldName) is { } vectorSchema)
                 {
-                    object vectorValue = DecodeVector(nativeDoc, fieldName, vectorSchema.DataType);
-                    doc.Vectors[fieldName] = vectorValue;
+                    object? vectorValue = DecodeVector(nativeDoc, fieldName, vectorSchema.DataType);
+                    if (vectorValue is not null)
+                    {
+                        doc.Vectors[fieldName] = vectorValue;
+                    }
                 }
                 else if (schema.Field(fieldName) is { } fieldSchema)
                 {
@@ -385,8 +389,6 @@ internal static unsafe class DocCodec
 
         return doc;
     }
-
-    private static bool HasScoreField(IntPtr nativeDoc) => NativeMethods.zvec_doc_get_score(nativeDoc) != 0f;
 
     private static object? DecodeScalar(IntPtr doc, string name, DataType dataType)
     {
@@ -494,8 +496,14 @@ internal static unsafe class DocCodec
         return items;
     }
 
-    private static object DecodeVector(IntPtr doc, string name, DataType dataType)
+    private static object? DecodeVector(IntPtr doc, string name, DataType dataType)
     {
+        // 标量侧（DecodeScalar）同款 NULL 检查：其他客户端写入的 NULL 向量字段读回为 null，而非异常。
+        if (NativeMethods.zvec_doc_is_field_null(doc, name))
+        {
+            return null;
+        }
+
         switch (dataType)
         {
             case DataType.VectorFp32:
@@ -541,10 +549,24 @@ internal static unsafe class DocCodec
                 NativeUtil.ThrowIfError(NativeMethods.zvec_doc_get_field_value_copy(doc, name, (uint)dataType, out IntPtr value, out nuint size));
                 try
                 {
+                    // 读回侧引擎头为 8 字节（低 4B=nnz + 4B 保留）；写入侧为 4 字节头（见 EncodeVector），两侧不对称。
+                    // 引擎返回数据不做前置担保，解引用前校验头与载荷长度，坏数据转为异常而非 AV 崩溃进程。
+                    if (value == IntPtr.Zero || size < 8)
+                    {
+                        throw new ZvecException(ZvecErrorCode.InternalError,
+                            $"稀疏向量字段 {name} 返回了无效载荷（指针空或 size={size} < 8）。");
+                    }
+
                     byte* buffer = (byte*)value;
-                    // 读回侧引擎头为 8 字节（size_t nnz + 4 字节保留位）；写入侧为 4 字节头（见 EncodeVector），两侧不对称。
                     uint nnz = *(uint*)buffer;
                     bool isFp16 = dataType == DataType.SparseVectorFp16;
+                    uint elementSize = isFp16 ? 6u : 8u;
+                    if ((nuint)nnz > (size - 8) / elementSize)
+                    {
+                        throw new ZvecException(ZvecErrorCode.InternalError,
+                            $"稀疏向量字段 {name} 的 nnz={nnz} 与载荷大小 {size} 不一致。");
+                    }
+
                     uint* indices = (uint*)(buffer + 8);
                     uint[] indexArray = new uint[nnz];
                     float[] valueArray = new float[nnz];

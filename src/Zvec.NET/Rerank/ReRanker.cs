@@ -1,9 +1,8 @@
 namespace Zvec.NET;
 
-/// <summary>
-/// 重排器（对齐 Python RerankFunction）：把多路检索结果合并为一份最终排序。
+/// <summary>重排器（对齐 Python RerankFunction）：把多路检索结果合并为一份最终排序。
 /// RRF 与 Weighted 走引擎内快速路径；Callback 与自定义实现走客户端合并路径。
-/// </summary>
+/// 注意：客户端合并路径会改写胜出 Doc 实例的 <see cref="Doc.Score"/>（复用输入列表的调用方需知悉）。</summary>
 public interface IReRanker
 {
     /// <summary>合并多路检索结果，返回前 topk 个文档。</summary>
@@ -12,16 +11,18 @@ public interface IReRanker
     IReadOnlyList<Doc> Rerank(IReadOnlyList<IReadOnlyList<Doc>> queryResults, int topk);
 }
 
-/// <summary>Reciprocal Rank Fusion：score = Σ 1/(k + rank)（对齐 Python RrfReRanker）。</summary>
+/// <summary>Reciprocal Rank Fusion：score = Σ 1/(k + rank)（对齐 Python RrfReRanker）。
+/// 同一文档在多路出现时以首次出现的 Doc 实例为准（与 WeightedReRanker 一致）。</summary>
 public sealed class RrfReRanker : IReRanker
 {
     /// <summary>排名常数 k（默认 60）；rank 从 1 计。</summary>
     public int RankConstant { get; }
 
     /// <summary>构造 RRF 重排器。</summary>
-    /// <param name="rankConstant">排名常数。</param>
+    /// <param name="rankConstant">排名常数（≥1；过小会放大头部排名权重）。</param>
     public RrfReRanker(int rankConstant = 60)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(rankConstant, 1);
         RankConstant = rankConstant;
     }
 
@@ -38,7 +39,7 @@ public sealed class RrfReRanker : IReRanker
             {
                 Doc doc = results[rank];
                 scores[doc.Id] = scores.GetValueOrDefault(doc.Id) + 1.0 / (RankConstant + rank + 1);
-                docs[doc.Id] = doc;
+                docs.TryAdd(doc.Id, doc);
             }
         }
 

@@ -210,4 +210,117 @@ public sealed class ZvecSetTests
         Assert.Throws<ArgumentException>(() => set.Search([1, 0, 0, 0], filter: ""));
         Assert.Throws<ArgumentException>(() => set.Search([1, 0, 0, 0], filter: "Price > 1\0"));
     }
+
+    // ============ 第三轮评审回归：键裁决 / 可空键 / 空键 / 异步写入 / 取消 ============
+
+    public class AttrAndConvention
+    {
+        public int Id { get; set; } // 约定键存在：显式 [VectorKey] 应胜出
+
+        [VectorKey]
+        public string Code { get; set; } = "";
+
+        [VectorField(Dimension = 2)]
+        public float[]? Emb { get; set; }
+    }
+
+    [Fact]
+    public void AttributeKeyWinsOverConventionId()
+    {
+        using ZvecSet<AttrAndConvention> set = ZvecSet<AttrAndConvention>.Create(NewDir());
+        set.Upsert(new AttrAndConvention { Id = 7, Code = "k1", Emb = [1, 0] });
+
+        Assert.Equal("k1", set.KeyOf(new AttrAndConvention { Code = "k1" }));
+        Assert.True(set.Underlying.Fetch("k1").ContainsKey("k1"));
+    }
+
+    public class TwoVectorKeys
+    {
+        [VectorKey] public string A { get; set; } = "";
+
+        [VectorKey] public string B { get; set; } = "";
+
+        [VectorField(Dimension = 2)] public float[]? Emb { get; set; }
+    }
+
+    [Fact]
+    public void MultipleVectorKeyAttributesThrow()
+    {
+        InvalidOperationException ex =
+            Assert.Throws<InvalidOperationException>(() => ZvecSet<TwoVectorKeys>.Create(NewDir()));
+        Assert.Contains("多个 [VectorKey]", ex.Message);
+    }
+
+    public class TwoConventionKeys
+    {
+        public int Id { get; set; }
+
+        public int TwoConventionKeysId { get; set; }
+
+        [VectorField(Dimension = 2)] public float[]? Emb { get; set; }
+    }
+
+    [Fact]
+    public void AmbiguousConventionKeysThrow()
+    {
+        Assert.Throws<InvalidOperationException>(() => ZvecSet<TwoConventionKeys>.Create(NewDir()));
+    }
+
+    public class NullableKeyEntity
+    {
+        public int? Id { get; set; }
+
+        [VectorField(Dimension = 2)] public float[]? Emb { get; set; }
+    }
+
+    [Fact]
+    public void NullableKeyThrowsReadableError()
+    {
+        NotSupportedException ex =
+            Assert.Throws<NotSupportedException>(() => ZvecSet<NullableKeyEntity>.Create(NewDir()));
+        Assert.Contains("主键不应可空", ex.Message);
+    }
+
+    [Fact]
+    public void EmptyStringKeyRejectedOnUpsert()
+    {
+        using ZvecSet<Product> set = ZvecSet<Product>.Create(NewDir());
+        Assert.Throws<ArgumentException>(() => set.Upsert(
+            new Product { Sku = "", Name = "n", Price = 1, Stock = 1, Embedding = [1, 0, 0, 0] }));
+    }
+
+    public class BadSparseEntity
+    {
+        public int Id { get; set; }
+
+        [VectorField(Dimension = 300)]
+        public SparseVector? Keywords { get; set; }
+    }
+
+    [Fact]
+    public void SparseVectorWithDimensionThrows()
+    {
+        Assert.Throws<NotSupportedException>(() => ZvecSet<BadSparseEntity>.Create(NewDir()));
+    }
+
+    [Fact]
+    public async Task AsyncUpsertWritesAndFindSimilarCancellationFailsFast()
+    {
+        using ZvecSet<Product> set = ZvecSet<Product>.Create(NewDir());
+        Assert.True((await set.UpsertAsync(
+            new Product { Sku = "a1", Name = "n", Price = 1, Stock = 1, Embedding = [1, 0, 0, 0] })).Success);
+
+        WriteResult[] results = await set.UpsertRangeAsync(
+        [
+            new Product { Sku = "a2", Name = "m", Price = 2, Stock = 2, Embedding = [0, 1, 0, 0] },
+        ]);
+        Assert.True(results[0].Success);
+        Assert.Equal(2ul, set.Underlying.Stats.DocCount);
+
+        using var context = new ShopContext();
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => set.FindSimilarAsync(context, [1, 0, 0, 0], cancellationToken: cancelled.Token));
+    }
 }

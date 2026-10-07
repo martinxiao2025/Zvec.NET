@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
 namespace Zvec.NET.EntityFrameworkCore;
 
 /// <summary>ZvecSet 创建选项：向量索引配置与集合打开选项。</summary>
-public sealed class ZvecSetOptions<TEntity>
+public sealed class ZvecSetOptions<[DynamicallyAccessedMembers(VectorTrimming.EntityMembers)] TEntity>
     where TEntity : class
 {
     private readonly Dictionary<string, IndexParam> _vectorIndexes = [];

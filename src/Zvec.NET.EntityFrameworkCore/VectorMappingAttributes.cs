@@ -21,17 +21,20 @@ public sealed class VectorCollectionAttribute : Attribute
 /// <summary>
 /// 标注实体的主键属性（对应 Doc.Id / zvec 主键）。
 /// 未标注时按约定取名为 "Id" 或 "&lt;实体名&gt;Id" 的属性。
-/// 支持 string / int / long / Guid，非 string 键以不变文化格式化为字符串存储。
+/// 支持 string / int / long / Guid；非 string 键以 ToString() 格式化为字符串存储
+/// （写入与查询两侧使用同一格式化表达式，保证对齐）。
+/// 注意：仅属性可标注（映射只读取属性，公有字段会被忽略）。
 /// </summary>
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class VectorKeyAttribute : Attribute
 {
 }
 
 /// <summary>
 /// 标注向量属性（float[] 稠密 FP32 或 <see cref="SparseVector"/> 稀疏）。
+/// 注意：仅属性可标注（映射只读取属性，公有字段会被忽略）。
 /// </summary>
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class VectorFieldAttribute : Attribute
 {
     /// <summary>稠密向量维度（稀疏向量为 0）。</summary>
@@ -45,8 +48,8 @@ public sealed class VectorFieldAttribute : Attribute
     }
 }
 
-/// <summary>标注不参与向量集合同步的属性。</summary>
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+/// <summary>标注不参与向量集合同步的属性。注意：仅属性可标注。</summary>
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class VectorIgnoredAttribute : Attribute
 {
 }
