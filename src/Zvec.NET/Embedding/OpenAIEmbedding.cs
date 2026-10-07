@@ -11,8 +11,16 @@ public sealed class OpenAIEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFu
 {
     private readonly int? _dimension;
 
+    /// <summary>请求的向量维度（若端点支持 dimensions 参数）；0 表示未指定。</summary>
     public int Dimension => _dimension ?? 0;
 
+    /// <summary>构造 OpenAI 兼容嵌入客户端。</summary>
+    /// <param name="model">模型名。</param>
+    /// <param name="apiKey">API Key（Bearer）；null 表示匿名端点。</param>
+    /// <param name="baseUrl">兼容端点基址。</param>
+    /// <param name="dimension">目标维度（可选）。</param>
+    /// <param name="httpClient">自定义 HttpClient（不传则自建并启用建连时刻安全校验）。</param>
+    /// <param name="timeout">请求超时（默认 30 秒）。</param>
     public OpenAIEmbedding(string model = "text-embedding-3-small", string? apiKey = null,
         string baseUrl = "https://api.openai.com/v1", int? dimension = null,
         HttpClient? httpClient = null, TimeSpan? timeout = null)
@@ -21,9 +29,12 @@ public sealed class OpenAIEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFu
         _dimension = dimension;
     }
 
+    /// <summary>编码单个文本（同步，经 Task.Run 脱离调用方同步上下文）。</summary>
+    /// <param name="input">输入文本。</param>
     public float[] Embed(string input) => EmbedBatch([input])[0];
 
     /// <summary>批量编码：返回与输入顺序一一对应的向量数组。</summary>
+    /// <param name="inputs">输入文本列表。</param>
     public float[][] EmbedBatch(IReadOnlyList<string> inputs)
     {
         ArgumentNullException.ThrowIfNull(inputs);
@@ -39,22 +50,20 @@ public sealed class OpenAIEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFu
         }
 
         // 同步上下文使用：嵌入调用本身为远程 IO，同步等待与 Python SDK 行为一致。
-        JsonDocument response = PostJsonAsync("/embeddings", payload, CancellationToken.None)
-            .GetAwaiter().GetResult();
-        using (response)
+        using JsonDocument response = PostJsonSync("/embeddings", payload);
+        float[][] vectors = new float[inputs.Count][];
+        foreach (JsonElement item in response.RootElement.GetProperty("data").EnumerateArray())
         {
-            float[][] vectors = new float[inputs.Count][];
-            foreach (JsonElement item in response.RootElement.GetProperty("data").EnumerateArray())
-            {
-                int index = item.GetProperty("index").GetInt32();
-                vectors[index] = ParseEmbedding(item.GetProperty("embedding"));
-            }
-
-            return vectors;
+            int index = item.GetProperty("index").GetInt32();
+            vectors[index] = ParseEmbedding(item.GetProperty("embedding"));
         }
+
+        return vectors;
     }
 
     /// <summary>异步编码单个文本。</summary>
+    /// <param name="input">输入文本。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
     public async Task<float[]> EmbedAsync(string input, CancellationToken cancellationToken = default)
     {
         var payload = new Dictionary<string, object?> { ["model"] = Model, ["input"] = new[] { input } };
@@ -73,6 +82,14 @@ public sealed class QwenDenseEmbedding : EmbeddingHttpClientBase, IDenseEmbeddin
 {
     private readonly int? _dimension;
 
+    /// <summary>构造 Qwen 嵌入客户端（DashScope 兼容端点）。</summary>
+    /// <param name="dimension">向量维度。</param>
+    /// <param name="apiKey">DashScope API Key（Bearer）。</param>
+    /// <param name="model">模型名。</param>
+    /// <param name="baseUrl">兼容端点基址。</param>
+    /// <param name="textType">text_type 参数（query/document，可选）。</param>
+    /// <param name="httpClient">自定义 HttpClient（不传则自建并启用建连时刻安全校验）。</param>
+    /// <param name="timeout">请求超时（默认 30 秒）。</param>
     public QwenDenseEmbedding(int dimension, string apiKey, string model = "text-embedding-v4",
         string baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1",
         string? textType = null, HttpClient? httpClient = null, TimeSpan? timeout = null)
@@ -82,10 +99,14 @@ public sealed class QwenDenseEmbedding : EmbeddingHttpClientBase, IDenseEmbeddin
         TextType = textType;
     }
 
+    /// <summary>text_type 参数（query/document）；null 表示不传。</summary>
     public string? TextType { get; }
 
+    /// <summary>请求的向量维度；0 表示未指定。</summary>
     public int Dimension => _dimension ?? 0;
 
+    /// <summary>编码单个文本（同步，经 Task.Run 脱离调用方同步上下文）。</summary>
+    /// <param name="input">输入文本。</param>
     public float[] Embed(string input)
     {
         var payload = new Dictionary<string, object?>
@@ -99,8 +120,7 @@ public sealed class QwenDenseEmbedding : EmbeddingHttpClientBase, IDenseEmbeddin
             payload["text_type"] = TextType;
         }
 
-        JsonDocument response = PostJsonAsync("/embeddings", payload, CancellationToken.None)
-            .GetAwaiter().GetResult();
+        JsonDocument response = PostJsonSync("/embeddings", payload);
         using (response)
         {
             return ParseEmbedding(response.RootElement.GetProperty("data")[0].GetProperty("embedding"));
@@ -113,6 +133,13 @@ public sealed class JinaEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFunc
 {
     private readonly int? _dimension;
 
+    /// <summary>构造 Jina 嵌入客户端。</summary>
+    /// <param name="apiKey">Jina API Key（Bearer）。</param>
+    /// <param name="model">模型名。</param>
+    /// <param name="dimension">目标维度（可选）。</param>
+    /// <param name="baseUrl">兼容端点基址。</param>
+    /// <param name="httpClient">自定义 HttpClient（不传则自建并启用建连时刻安全校验）。</param>
+    /// <param name="timeout">请求超时（默认 30 秒）。</param>
     public JinaEmbedding(string apiKey, string model = "jina-embeddings-v3", int? dimension = null,
         string baseUrl = "https://api.jina.ai/v1", HttpClient? httpClient = null, TimeSpan? timeout = null)
         : base(baseUrl, model, apiKey, httpClient, timeout)
@@ -120,8 +147,11 @@ public sealed class JinaEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFunc
         _dimension = dimension;
     }
 
+    /// <summary>请求的向量维度；0 表示未指定。</summary>
     public int Dimension => _dimension ?? 0;
 
+    /// <summary>编码单个文本（同步，经 Task.Run 脱离调用方同步上下文）。</summary>
+    /// <param name="input">输入文本。</param>
     public float[] Embed(string input)
     {
         var payload = new Dictionary<string, object?>
@@ -134,8 +164,7 @@ public sealed class JinaEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFunc
             payload["dimensions"] = _dimension;
         }
 
-        JsonDocument response = PostJsonAsync("/embeddings", payload, CancellationToken.None)
-            .GetAwaiter().GetResult();
+        JsonDocument response = PostJsonSync("/embeddings", payload);
         using (response)
         {
             return ParseEmbedding(response.RootElement.GetProperty("data")[0].GetProperty("embedding"));
