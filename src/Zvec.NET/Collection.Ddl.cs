@@ -4,8 +4,7 @@ namespace Zvec.NET;
 
 /// <summary>Collection 的 DDL、统计与生命周期管理。</summary>
 public sealed partial class Collection
-{
-    // =========================================================================
+{    // =========================================================================
     // 索引 DDL
     // =========================================================================
 
@@ -18,7 +17,8 @@ public sealed partial class Collection
         IntPtr nativeParams = ParamBuilder.BuildIndexParam(indexParam);
         try
         {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_index(Handle, fieldName, nativeParams));
+            using var lease = AcquireLease();
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_index(lease.Ptr, fieldName, nativeParams));
         }
         finally
         {
@@ -28,15 +28,22 @@ public sealed partial class Collection
         RefreshSchema();
     }
 
+    /// <summary>删除字段的索引。</summary>
+    /// <param name="fieldName">字段名。</param>
     public void DropIndex(string fieldName)
     {
         ValidateIdentifier(fieldName, nameof(fieldName));
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_index(Handle, fieldName));
+        using var lease = AcquireLease();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_index(lease.Ptr, fieldName));
         RefreshSchema();
     }
 
     /// <summary>优化集合（合并 segment、重建索引等）。</summary>
-    public void Optimize() => NativeUtil.ThrowIfError(NativeMethods.zvec_collection_optimize(Handle));
+    public void Optimize()
+    {
+        using var lease = AcquireLease();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_optimize(lease.Ptr));
+    }
 
     // =========================================================================
     // 列 DDL
@@ -49,13 +56,15 @@ public sealed partial class Collection
     public void AddColumn(FieldSchema fieldSchema, string expression = "")
     {
         ArgumentNullException.ThrowIfNull(fieldSchema);
+        ArgumentNullException.ThrowIfNull(expression);
 
         IntPtr nativeField = ParamBuilder.BuildFieldSchema(
             fieldSchema.Name, (uint)fieldSchema.DataType, fieldSchema.Nullable, 0);
         try
         {
             string? safeExpression = expression.Length == 0 ? null : ValidateExpression(expression, nameof(expression));
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_add_column(Handle, nativeField, safeExpression));
+            using var lease = AcquireLease();
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_add_column(lease.Ptr, nativeField, safeExpression));
         }
         finally
         {
@@ -65,10 +74,13 @@ public sealed partial class Collection
         RefreshSchema();
     }
 
+    /// <summary>删除列。</summary>
+    /// <param name="fieldName">列名。</param>
     public void DropColumn(string fieldName)
     {
         ValidateIdentifier(fieldName, nameof(fieldName));
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_column(Handle, fieldName));
+        using var lease = AcquireLease();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_column(lease.Ptr, fieldName));
         RefreshSchema();
     }
 
@@ -86,8 +98,9 @@ public sealed partial class Collection
 
         try
         {
+            using var lease = AcquireLease();
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_alter_column(
-                Handle, oldName, string.IsNullOrEmpty(newName) ? null : newName, nativeField));
+                lease.Ptr, oldName, string.IsNullOrEmpty(newName) ? null : newName, nativeField));
         }
         finally
         {
@@ -102,7 +115,9 @@ public sealed partial class Collection
 
     private void RefreshSchema()
     {
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_schema(HandleNoAddRef, out IntPtr nativeSchema));
+        // 嵌套租约安全（SafeHandle 引用计数）；DDL 入口已持有租约时此处为计数叠加。
+        using var lease = AcquireLease();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_schema(lease.Ptr, out IntPtr nativeSchema));
         var handle = new DelegateHandle(nativeSchema, NativeMethods.zvec_collection_schema_destroy);
         try
         {
@@ -118,11 +133,13 @@ public sealed partial class Collection
     // 统计与生命周期
     // =========================================================================
 
+    /// <summary>集合统计（文档数与向量索引完整度）。</summary>
     public CollectionStats Stats
     {
         get
         {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_stats(HandleNoAddRef, out IntPtr stats));
+            using var lease = AcquireLease();
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_stats(lease.Ptr, out IntPtr stats));
             try
             {
                 ulong docCount = NativeMethods.zvec_collection_stats_get_doc_count(stats);
@@ -145,7 +162,11 @@ public sealed partial class Collection
     }
 
     /// <summary>强制将待写数据落盘。</summary>
-    public void Flush() => NativeUtil.ThrowIfError(NativeMethods.zvec_collection_flush(Handle));
+    public void Flush()
+    {
+        using var lease = AcquireLease();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_flush(lease.Ptr));
+    }
 
     /// <summary>关闭集合句柄（幂等；等待仍打开的迭代器结束后释放文件锁）。</summary>
     public void Close() => _handle.Dispose();
@@ -153,16 +174,12 @@ public sealed partial class Collection
     /// <summary>永久删除集合及其磁盘数据（不可恢复）。</summary>
     public void Destroy()
     {
-        IntPtr handle = Handle;
-        try
-        {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_destroy(handle));
-        }
-        finally
-        {
-            _handle.SetHandleAsInvalid();
-        }
+        using var lease = AcquireLease();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_destroy(lease.Ptr));
+        // 先标记失效再释放租约引用，避免计数归零时再次触发 close。
+        _handle.SetHandleAsInvalid();
     }
 
+    /// <summary>释放集合（等价 <see cref="Close"/>，支持 using）。</summary>
     public void Dispose() => Close();
 }

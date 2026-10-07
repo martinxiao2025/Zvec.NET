@@ -51,8 +51,9 @@ public sealed unsafe partial class Collection
                 NativeUtil.ThrowIfError(NativeMethods.zvec_iterator_options_set_output_fields(options, fields, count));
             }
 
+            using var lease = AcquireLease();
             NativeUtil.ThrowIfError(NativeMethods.zvec_iterator_options_set_include_vector(options, includeVector));
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_iterator(Handle, options, out IntPtr iterator));
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_iterator(lease.Ptr, options, out IntPtr iterator));
             return iterator;
         }
         finally

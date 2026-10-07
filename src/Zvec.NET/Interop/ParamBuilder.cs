@@ -5,6 +5,9 @@ namespace Zvec.NET.Interop;
 /// <summary>托管模型 → 原生对象的构建器。所有返回的指针均由调用方拥有，除非显式转移。</summary>
 internal static unsafe class ParamBuilder
 {
+    /// <summary>IVF/Flat refiner 候选扩展倍数的引擎默认值（与 QueryParams 中属性默认一致）。</summary>
+    private const float ScaleFactorDefault = 10f;
+
     /// <summary>构建原生索引参数（调用方拥有；用于 set 后必须 destroy 的 API——schema_set_index_params / collection_create_index 均为深拷贝语义）。</summary>
     internal static IntPtr BuildIndexParam(IndexParam param)
     {
@@ -97,9 +100,9 @@ internal static unsafe class ParamBuilder
     {
         HnswQueryParam p => NativeMethods.zvec_query_params_hnsw_create(p.Ef, p.Radius, p.IsLinear, p.IsUsingRefiner),
         HnswRabitqQueryParam p => NativeMethods.zvec_query_params_hnsw_create(p.Ef, p.Radius, p.IsLinear, p.IsUsingRefiner),
-        IvfQueryParam p => NativeMethods.zvec_query_params_ivf_create(p.NProbe, p.IsUsingRefiner, 10f),
+        IvfQueryParam p => NativeMethods.zvec_query_params_ivf_create(p.NProbe, p.IsUsingRefiner, ScaleFactorDefault),
         IvfRabitqQueryParam p => NativeMethods.zvec_query_params_ivf_rabitq_create(p.NProbe, p.Radius, p.IsLinear, p.IsUsingRefiner),
-        FlatQueryParam => NativeMethods.zvec_query_params_flat_create(is_using_refiner: false, scale_factor: 10f),
+        FlatQueryParam p => NativeMethods.zvec_query_params_flat_create(p.IsUsingRefiner, p.ScaleFactor),
         VamanaQueryParam p => NativeMethods.zvec_query_params_vamana_create(p.EfSearch, p.Radius, p.IsLinear, p.IsUsingRefiner),
         DiskAnnQueryParam p => NativeMethods.zvec_query_params_diskann_create(p.ListSize),
         FtsQueryParam p => NativeMethods.zvec_query_params_fts_create(

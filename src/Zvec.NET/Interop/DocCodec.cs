@@ -6,6 +6,30 @@ namespace Zvec.NET.Interop;
 /// <summary>Doc 的原生编码/解码。字段值布局遵循 c_api.cc 的 extract_* 约定。</summary>
 internal static unsafe class DocCodec
 {
+    /// <summary>编码缓冲超过此字节数时退到非托管堆，避免大载荷打爆线程栈。</summary>
+    private const int StackBufferSize = 1024;
+
+    /// <summary>
+    /// 临时编码缓冲：小载荷复用调用方 stackalloc 的 <see cref="StackBufferSize"/> 栈内存，
+    /// 大载荷改用 AllocHGlobal。必须以 using/Dispose 释放。持有指向调用方栈帧的指针，
+    /// 故声明为 ref struct 禁止逃逸。
+    /// </summary>
+    private ref struct TempNativeBuffer(int byteCount, byte* stackBuffer)
+    {
+        private readonly IntPtr _heap = byteCount > StackBufferSize
+            ? Marshal.AllocHGlobal(byteCount)
+            : IntPtr.Zero;
+
+        public byte* Pointer => _heap == IntPtr.Zero ? stackBuffer : (byte*)_heap;
+
+        public void Dispose()
+        {
+            if (_heap != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_heap);
+            }
+        }
+    }
     /// <summary>构建原生 Doc（调用方拥有，用 zvec_doc_destroy 释放）。schema 决定每个字段的编码类型。</summary>
     internal static IntPtr BuildDoc(Doc doc, CollectionSchema schema)
     {
@@ -63,34 +87,35 @@ internal static unsafe class DocCodec
                 AddScalar(doc, name, dataType, (bool)ConvertTo(value, typeof(bool)));
                 break;
             case DataType.Int32:
-                AddScalar(doc, name, dataType, Convert.ToInt32(value));
+                AddScalar(doc, name, dataType, Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case DataType.Int64:
-                AddScalar(doc, name, dataType, Convert.ToInt64(value));
+                AddScalar(doc, name, dataType, Convert.ToInt64(value, System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case DataType.UInt32:
-                AddScalar(doc, name, dataType, Convert.ToUInt32(value));
+                AddScalar(doc, name, dataType, Convert.ToUInt32(value, System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case DataType.UInt64:
-                AddScalar(doc, name, dataType, Convert.ToUInt64(value));
+                AddScalar(doc, name, dataType, Convert.ToUInt64(value, System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case DataType.Float:
-                AddScalar(doc, name, dataType, Convert.ToSingle(value));
+                AddScalar(doc, name, dataType, Convert.ToSingle(value, System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case DataType.Double:
-                AddScalar(doc, name, dataType, Convert.ToDouble(value));
+                AddScalar(doc, name, dataType, Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case DataType.String:
             {
                 string str = (string)value;
                 int byteCount = Encoding.UTF8.GetByteCount(str);
-                byte* buffer = stackalloc byte[byteCount == 0 ? 1 : byteCount];
+                byte* stackBuffer = stackalloc byte[StackBufferSize];
+                using var buffer = new TempNativeBuffer(byteCount, stackBuffer);
                 if (byteCount > 0)
                 {
-                    Encoding.UTF8.GetBytes(str, new Span<byte>(buffer, byteCount));
+                    Encoding.UTF8.GetBytes(str, new Span<byte>(buffer.Pointer, byteCount));
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer, (nuint)byteCount));
+                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer.Pointer, (nuint)byteCount));
                 break;
             }
             case DataType.Binary:
@@ -112,9 +137,10 @@ internal static unsafe class DocCodec
                     totalBytes += Encoding.UTF8.GetByteCount(item) + 1;
                 }
 
-                byte* buffer = stackalloc byte[totalBytes];
+                byte* stackBuffer = stackalloc byte[StackBufferSize];
+                using var buffer = new TempNativeBuffer(totalBytes, stackBuffer);
                 int offset = 0;
-                Span<byte> span = new(buffer, totalBytes);
+                Span<byte> span = new(buffer.Pointer, totalBytes);
                 foreach (string item in items)
                 {
                     offset += Encoding.UTF8.GetBytes(item, span[offset..]);
@@ -122,7 +148,7 @@ internal static unsafe class DocCodec
                     offset++;
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer, (nuint)offset));
+                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer.Pointer, (nuint)offset));
                 break;
             }
             case DataType.ArrayBool:
@@ -233,9 +259,11 @@ internal static unsafe class DocCodec
             {
                 SparseVector sparse = ToSparse(value);
                 int nnz = sparse.Count;
-                byte* buffer = stackalloc byte[4 + nnz * 8];
-                *(uint*)buffer = (uint)nnz;
-                uint* indices = (uint*)(buffer + 4);
+                int byteCount = checked(4 + nnz * 8);
+                byte* stackBuffer = stackalloc byte[StackBufferSize];
+                using var buffer = new TempNativeBuffer(byteCount, stackBuffer);
+                *(uint*)buffer.Pointer = (uint)nnz;
+                uint* indices = (uint*)(buffer.Pointer + 4);
                 float* values = (float*)(indices + nnz);
                 for (int i = 0; i < nnz; i++)
                 {
@@ -244,17 +272,19 @@ internal static unsafe class DocCodec
                 }
 
                 NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                    doc, name, (uint)dataType, buffer, (nuint)(4 + nnz * 8)));
+                    doc, name, (uint)dataType, buffer.Pointer, (nuint)byteCount));
                 break;
             }
             case DataType.SparseVectorFp16:
             {
                 SparseVector sparse = ToSparse(value);
                 int nnz = sparse.Count;
-                byte* buffer = stackalloc byte[4 + nnz * 6];
-                *(uint*)buffer = (uint)nnz;
-                uint* indices = (uint*)(buffer + 4);
-                Half* values = (Half*)(buffer + 4 + nnz * 4);
+                int byteCount = checked(4 + nnz * 6);
+                byte* stackBuffer = stackalloc byte[StackBufferSize];
+                using var buffer = new TempNativeBuffer(byteCount, stackBuffer);
+                *(uint*)buffer.Pointer = (uint)nnz;
+                uint* indices = (uint*)(buffer.Pointer + 4);
+                Half* values = (Half*)(buffer.Pointer + 4 + nnz * 4);
                 for (int i = 0; i < nnz; i++)
                 {
                     indices[i] = sparse.Indices[i];
@@ -262,7 +292,7 @@ internal static unsafe class DocCodec
                 }
 
                 NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                    doc, name, (uint)dataType, buffer, (nuint)(4 + nnz * 6)));
+                    doc, name, (uint)dataType, buffer.Pointer, (nuint)byteCount));
                 break;
             }
             default:
@@ -508,13 +538,14 @@ internal static unsafe class DocCodec
             case DataType.SparseVectorFp32:
             case DataType.SparseVectorFp16:
             {
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_get_field_value_copy(doc, name, (uint)dataType, out IntPtr value, out _));
+                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_get_field_value_copy(doc, name, (uint)dataType, out IntPtr value, out nuint size));
                 try
                 {
                     byte* buffer = (byte*)value;
+                    // 读回侧引擎头为 8 字节（size_t nnz + 4 字节保留位）；写入侧为 4 字节头（见 EncodeVector），两侧不对称。
                     uint nnz = *(uint*)buffer;
                     bool isFp16 = dataType == DataType.SparseVectorFp16;
-                    uint* indices = (uint*)(buffer + 4);
+                    uint* indices = (uint*)(buffer + 8);
                     uint[] indexArray = new uint[nnz];
                     float[] valueArray = new float[nnz];
                     for (int i = 0; i < nnz; i++)
@@ -524,7 +555,7 @@ internal static unsafe class DocCodec
 
                     if (isFp16)
                     {
-                        Half* values = (Half*)(buffer + 4 + nnz * 4);
+                        Half* values = (Half*)(buffer + 8 + nnz * 4);
                         for (int i = 0; i < nnz; i++)
                         {
                             valueArray[i] = (float)values[i];
@@ -532,7 +563,7 @@ internal static unsafe class DocCodec
                     }
                     else
                     {
-                        float* values = (float*)(buffer + 4 + nnz * 4);
+                        float* values = (float*)(buffer + 8 + nnz * 4);
                         for (int i = 0; i < nnz; i++)
                         {
                             valueArray[i] = values[i];

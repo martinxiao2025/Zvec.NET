@@ -70,7 +70,7 @@ public sealed unsafe partial class Collection
     private bool IsSparseVectorField(string fieldName) =>
         Schema.Vector(fieldName) is { } vector && SchemaUtil.IsSparseVectorDataType(vector.DataType);
 
-    private IReadOnlyList<Doc> ExecuteSingleOrSparse(Query query, int topk, string? safeFilter,
+    private Doc[] ExecuteSingleOrSparse(Query query, int topk, string? safeFilter,
         bool includeVector, IReadOnlyList<string>? outputFields)
     {
         if (!IsSparseQuery(query))
@@ -82,7 +82,7 @@ public sealed unsafe partial class Collection
         return ExecuteMultiQueryNative([query, query], new RrfReRanker(), topk, safeFilter, includeVector, outputFields);
     }
 
-    private IReadOnlyList<Doc> ExecuteSingleQuery(Query? query, int topk, string? safeFilter,
+    private Doc[] ExecuteSingleQuery(Query? query, int topk, string? safeFilter,
         bool includeVector, IReadOnlyList<string>? outputFields)
     {
         IntPtr nativeQuery = NativeMethods.zvec_vector_query_create();
@@ -104,8 +104,9 @@ public sealed unsafe partial class Collection
                 ApplyQuery(nativeQuery, query);
             }
 
+            using var lease = AcquireLease();
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_query(
-                Handle, nativeQuery, out IntPtr results, out nuint resultCount));
+                lease.Ptr, nativeQuery, out IntPtr results, out nuint resultCount));
             return ReadDocArray(results, resultCount);
         }
         finally
@@ -206,7 +207,7 @@ public sealed unsafe partial class Collection
     }
 
     /// <summary>原生 MultiQuery 快速路径（RRF / Weighted 重排在引擎内完成）。</summary>
-    private IReadOnlyList<Doc> ExecuteMultiQueryNative(IReadOnlyList<Query> queries, IReRanker reranker,
+    private Doc[] ExecuteMultiQueryNative(IReadOnlyList<Query> queries, IReRanker reranker,
         int topk, string? safeFilter, bool includeVector, IReadOnlyList<string>? outputFields)
     {
         IntPtr multiQuery = NativeMethods.zvec_multi_query_create();
@@ -251,8 +252,9 @@ public sealed unsafe partial class Collection
                     throw new NotSupportedException("原生快速路径仅支持 RRF 与 Weighted 重排。");
             }
 
+            using var lease = AcquireLease();
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_multi_query(
-                Handle, multiQuery, out IntPtr results, out nuint resultCount));
+                lease.Ptr, multiQuery, out IntPtr results, out nuint resultCount));
             return ReadDocArray(results, resultCount);
         }
         finally
@@ -317,7 +319,7 @@ public sealed unsafe partial class Collection
         }
     }
 
-    private IReadOnlyList<Doc> ReadDocArray(IntPtr results, nuint count)
+    private Doc[] ReadDocArray(IntPtr results, nuint count)
     {
         try
         {

@@ -1,4 +1,4 @@
-using Xunit;
+﻿using Xunit;
 using Zvec.NET;
 
 namespace Zvec.NET.Tests;
@@ -9,7 +9,7 @@ public sealed class CollectionDdlTests : IClassFixture<ZvecFixture>
 
     public CollectionDdlTests(ZvecFixture fixture) => _fixture = fixture;
 
-    private CollectionSchema BuildSchema() => new CollectionSchema("ddl")
+    private static CollectionSchema BuildSchema() => new CollectionSchema("ddl")
         .AddField(new FieldSchema("title", DataType.String))
         .AddField(new FieldSchema("age", DataType.Int32))
         .AddVector(new VectorSchema("emb", DataType.VectorFp32, 4));
@@ -91,7 +91,7 @@ public sealed class SparseVectorTests : IClassFixture<ZvecFixture>
 
     public SparseVectorTests(ZvecFixture fixture) => _fixture = fixture;
 
-    private CollectionSchema BuildSchema() => new CollectionSchema("sparse")
+    private static CollectionSchema BuildSchema() => new CollectionSchema("sparse")
         .AddField(new FieldSchema("title", DataType.String))
         .AddVector(new VectorSchema("dense", DataType.VectorFp32, 3))
         .AddVector(new VectorSchema("sparse", DataType.SparseVectorFp32, 0));
@@ -117,10 +117,13 @@ public sealed class SparseVectorTests : IClassFixture<ZvecFixture>
                 }),
         ]);
 
-        // 读回稀疏向量。
+        // 读回稀疏向量（含内容校验：引擎读回侧头为 8 字节，曾因按 4 字节解码导致错位）。
         Doc fetched = collection.Fetch("s1")["s1"];
         var sparse = Assert.IsType<SparseVector>(fetched.Vector("sparse"));
         Assert.Equal(2, sparse.Count);
+        Assert.Equal(new uint[] { 2, 7 }, sparse.Indices);
+        Assert.Equal(0.5f, sparse.Values[0], 5);
+        Assert.Equal(0.9f, sparse.Values[1], 5);
 
         // 稀疏检索（内部走 MultiQuery 路径）。
         IReadOnlyList<Doc> results = collection.Query(
