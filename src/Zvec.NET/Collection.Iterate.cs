@@ -8,8 +8,11 @@ public sealed unsafe partial class Collection
     /// <summary>全量快照迭代（对齐 Python iter_docs；枚举期间 DDL/destroy 受限）。
     /// 枚举全程持有集合句柄租约：并发 Close/Dispose 推迟到迭代结束后才真正执行原生 close，
     /// 避免引擎因迭代器未关闭而 close 失败（SafeHandle 记为释放失败将永久泄漏原生集合）。</summary>
+    /// <param name="outputFields">仅迭代的标量字段；null = 全部（不支持空列表）。</param>
+    /// <param name="includeVector">是否迭代向量。</param>
     public IEnumerable<Doc> IterateDocs(IReadOnlyList<string>? outputFields = null, bool includeVector = true)
     {
+        ValidateOutputFields(outputFields);
         using var collectionLease = AcquireLease();
         IntPtr iterator = CreateDocIterator(outputFields, includeVector);
         var handle = new DocIteratorHandle(iterator);

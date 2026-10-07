@@ -90,14 +90,18 @@ public sealed class CollectionSchema
     /// <summary>集合名。</summary>
     public string Name { get; set; }
 
-    /// <summary>标量字段列表。请经 <see cref="AddField"/> 追加（同时维护按名查找缓存）。</summary>
-    public List<FieldSchema> Fields { get; } = [];
+    /// <summary>标量字段（只读视图）。变更须经 <see cref="AddField"/>（同时维护按名查找缓存）。</summary>
+    public IReadOnlyList<FieldSchema> Fields => _fields;
 
-    /// <summary>向量字段列表。请经 <see cref="AddVector"/> 追加（同时维护按名查找缓存）。</summary>
-    public List<VectorSchema> Vectors { get; } = [];
+    /// <summary>向量字段（只读视图）。变更须经 <see cref="AddVector"/>（同时维护按名查找缓存）。</summary>
+    public IReadOnlyList<VectorSchema> Vectors => _vectors;
 
-    // 按名查找缓存（与 Fields/Vectors 同步维护）：Doc 编解码热路径从 O(n) 线性扫描降为 O(1)；
+    private readonly List<FieldSchema> _fields = [];
+    private readonly List<VectorSchema> _vectors = [];
+
+    // 按名查找缓存（与 _fields/_vectors 同步维护）：Doc 编解码热路径从 O(n) 线性扫描降为 O(1)；
     // _names 同时覆盖标量与向量字段——同一 schema 内字段名全域唯一（与原生 add_field 语义一致）。
+    // 字段列表不暴露可变 List 正是为保证该缓存不被绕过（直接 Add 会绕过查重与字典维护）。
     private readonly Dictionary<string, FieldSchema> _fieldMap = new(StringComparer.Ordinal);
     private readonly Dictionary<string, VectorSchema> _vectorMap = new(StringComparer.Ordinal);
     private readonly HashSet<string> _names = new(StringComparer.Ordinal);
@@ -120,7 +124,7 @@ public sealed class CollectionSchema
         }
 
         _fieldMap.Add(field.Name, field);
-        Fields.Add(field);
+        _fields.Add(field);
         return this;
     }
 
@@ -135,7 +139,7 @@ public sealed class CollectionSchema
         }
 
         _vectorMap.Add(vector.Name, vector);
-        Vectors.Add(vector);
+        _vectors.Add(vector);
         return this;
     }
 

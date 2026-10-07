@@ -53,29 +53,35 @@ public sealed class EmbeddingSecurityTests
     [InlineData("http://localhost:1234/v1/embeddings")]
     [InlineData("http://127.0.0.1:8080/x")]
     [InlineData("http://[::1]:9000/x")]
+    [InlineData("http://[::]:9000/x")]                        // IPv6 未指定地址（Linux 视作环回）
     [InlineData("http://[::ffff:127.0.0.1]:9000/x")]     // IPv4-mapped 环回
     [InlineData("http://[::ffff:10.1.2.3]/v1/x")]         // IPv4-mapped 私网
     [InlineData("http://[64:ff9b::10.1.2.3]/x")]          // NAT64 承载私网 IPv4
+    [InlineData("http://[64:ff9b:1::10.1.2.3]/x")]        // RFC 8215 本地 NAT64 承载私网
     [InlineData("http://[2002:0a01:0203::]/x")]           // 6to4 承载 10.1.2.3
+    [InlineData("http://[::10.1.2.3]/x")]                 // IPv4 兼容格式承载私网
     [InlineData("http://[2001:0::5cdf]/x")]               // Teredo
     [InlineData("http://10.1.2.3/v1/x")]
     [InlineData("http://172.16.0.1/v1/x")]
     [InlineData("http://192.168.1.5/v1/x")]
     [InlineData("http://169.254.1.1/v1/x")]
+    [InlineData("http://100.64.1.1/v1/x")]                // 100.64.0.0/10 CGNAT/共享地址空间
+    [InlineData("http://198.18.0.1/v1/x")]                // 198.18.0.0/15 基准测试
     [InlineData("http://0.0.0.0/x")]
     [InlineData("https://127.0.0.1/x")]
     [InlineData("file://api.openai.com/v1")]
     [InlineData("ftp://example.com/x")]
-    public void ValidateRequestUriRejectsDisallowedHosts(string url)
+    public async Task ValidateRequestUriRejectsDisallowedHosts(string url)
     {
-        Assert.ThrowsAny<Exception>(() => EmbeddingHttpClientBase.ValidateRequestUri(new Uri(url)));
+        await Assert.ThrowsAnyAsync<Exception>(
+            () => EmbeddingHttpClientBase.ValidateRequestUriAsync(new Uri(url)));
     }
 
     [Fact]
-    public void ValidateRequestUriAllowsPublicHost()
+    public async Task ValidateRequestUriAllowsPublicHost()
     {
         // api.openai.com 解析为公网地址；仅验证不抛异常。
-        EmbeddingHttpClientBase.ValidateRequestUri(new Uri("https://api.openai.com/v1/embeddings"));
+        await EmbeddingHttpClientBase.ValidateRequestUriAsync(new Uri("https://api.openai.com/v1/embeddings"));
     }
 
     [Fact]

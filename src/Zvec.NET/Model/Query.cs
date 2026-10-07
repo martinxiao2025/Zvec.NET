@@ -96,7 +96,7 @@ public readonly record struct IndexStat(string Name, float Completeness);
 /// <summary>分组检索结果（客户端模拟实现）。</summary>
 public sealed class GroupResult
 {
-    /// <summary>分组键值（标量字段的值）。</summary>
+    /// <summary>分组键的字符串化表示（不变文化 ToString()）；字段值为 null 的组固定为 "&lt;null&gt;" 哨兵。</summary>
     public object? Key { get; init; }
 
     /// <summary>该组内按得分排序的文档。</summary>

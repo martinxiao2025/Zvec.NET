@@ -130,25 +130,43 @@ internal static unsafe class DocCodec
             }
             case DataType.ArrayString:
             {
+                // 引擎写入侧启发式（c_api.cc）：value_size 为指针大小倍数时按 zvec_string_t** 指针数组
+                // 解释，否则按 NUL 结尾字符串拼接解释。拼接总字节数恰为 8 倍数时会被误判为指针数组
+                // 导致野指针解引用，故统一采用指针数组布局（对任意长度/内容稳定）：
+                // [zvec_string_t* 数组][zvec_string_t 结构数组][UTF-8 字节区]，前两段均为 8 字节对齐。
                 string[] items = value as string[] ?? ((IReadOnlyCollection<object>)value).Cast<string>().ToArray();
-                int totalBytes = 1;
+                int stringBytes = 0;
                 foreach (string item in items)
                 {
-                    totalBytes += Encoding.UTF8.GetByteCount(item) + 1;
+                    if (item is null)
+                    {
+                        throw new ArgumentException($"字段 {name} 的字符串数组包含 null 元素。", nameof(value));
+                    }
+
+                    stringBytes = checked(stringBytes + Encoding.UTF8.GetByteCount(item));
                 }
 
+                int structsOffset = checked(items.Length * sizeof(nuint));
+                int bytesOffset = checked(structsOffset + items.Length * sizeof(ZvecString));
+                int totalBytes = checked(bytesOffset + stringBytes);
                 byte* stackBuffer = stackalloc byte[StackBufferSize];
                 using var buffer = new TempNativeBuffer(totalBytes, stackBuffer);
+                ZvecString* structs = (ZvecString*)(buffer.Pointer + structsOffset);
+                byte* bytes = buffer.Pointer + bytesOffset;
                 int offset = 0;
-                Span<byte> span = new(buffer.Pointer, totalBytes);
-                foreach (string item in items)
+                for (int i = 0; i < items.Length; i++)
                 {
-                    offset += Encoding.UTF8.GetBytes(item, span[offset..]);
-                    span[offset] = 0;
-                    offset++;
+                    int written = items[i].Length == 0 ? 0
+                        : Encoding.UTF8.GetBytes(items[i], new Span<byte>(bytes + offset, stringBytes - offset));
+                    structs[i].Data = (IntPtr)(bytes + offset);
+                    structs[i].Length = (nuint)written;
+                    structs[i].Capacity = (nuint)written;
+                    ((ZvecString**)buffer.Pointer)[i] = structs + i;
+                    offset += written;
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer.Pointer, (nuint)offset));
+                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
+                    doc, name, (uint)dataType, buffer.Pointer, (nuint)checked(items.Length * sizeof(nuint))));
                 break;
             }
             case DataType.ArrayBool:
@@ -157,7 +175,7 @@ internal static unsafe class DocCodec
                 fixed (bool* p = items)
                 {
                     NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                        doc, name, (uint)dataType, p, (nuint)(items.Length * sizeof(bool))));
+                        doc, name, (uint)dataType, p, (nuint)checked(items.Length * sizeof(bool))));
                 }
 
                 break;
@@ -203,7 +221,8 @@ internal static unsafe class DocCodec
     {
         fixed (T* p = values)
         {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, p, (nuint)(values.Length * sizeof(T))));
+            NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
+                doc, name, (uint)dataType, p, (nuint)checked(values.Length * sizeof(T))));
         }
     }
 
@@ -217,7 +236,7 @@ internal static unsafe class DocCodec
                 fixed (float* p = vector)
                 {
                     NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                        doc, name, (uint)dataType, p, (nuint)(vector.Length * sizeof(float))));
+                        doc, name, (uint)dataType, p, (nuint)checked(vector.Length * sizeof(float))));
                 }
 
                 break;
@@ -228,7 +247,7 @@ internal static unsafe class DocCodec
                 fixed (double* p = vector)
                 {
                     NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                        doc, name, (uint)dataType, p, (nuint)(vector.Length * sizeof(double))));
+                        doc, name, (uint)dataType, p, (nuint)checked(vector.Length * sizeof(double))));
                 }
 
                 break;
@@ -239,7 +258,7 @@ internal static unsafe class DocCodec
                 fixed (Half* p = vector)
                 {
                     NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                        doc, name, (uint)dataType, p, (nuint)(vector.Length * sizeof(Half))));
+                        doc, name, (uint)dataType, p, (nuint)checked(vector.Length * sizeof(Half))));
                 }
 
                 break;
@@ -317,21 +336,21 @@ internal static unsafe class DocCodec
             case DataType.VectorFp32:
             {
                 float[] vector = value as float[] ?? CastToArray<float>(value);
-                byte[] bytes = new byte[vector.Length * sizeof(float)];
+                byte[] bytes = new byte[checked(vector.Length * sizeof(float))];
                 Buffer.BlockCopy(vector, 0, bytes, 0, bytes.Length);
                 return bytes;
             }
             case DataType.VectorFp64:
             {
                 double[] vector = value as double[] ?? CastToArray<double>(value);
-                byte[] bytes = new byte[vector.Length * sizeof(double)];
+                byte[] bytes = new byte[checked(vector.Length * sizeof(double))];
                 Buffer.BlockCopy(vector, 0, bytes, 0, bytes.Length);
                 return bytes;
             }
             case DataType.VectorFp16:
             {
                 Half[] vector = value as Half[] ?? CastToArray<Half>(value);
-                byte[] bytes = new byte[vector.Length * sizeof(Half)];
+                byte[] bytes = new byte[checked(vector.Length * sizeof(Half))];
                 Buffer.BlockCopy(vector, 0, bytes, 0, bytes.Length);
                 return bytes;
             }
@@ -362,23 +381,27 @@ internal static unsafe class DocCodec
         NativeUtil.ThrowIfError(NativeMethods.zvec_doc_get_field_names(nativeDoc, out IntPtr namesPtr, out nuint count));
         try
         {
-            var names = new IntPtr[(int)count];
-            Marshal.Copy(namesPtr, names, 0, (int)count);
-
-            foreach (IntPtr namePtr in names)
+            // 无字段的文档（如纯向量投影）可能返回 NULL 指针 + count=0：先判空再拷贝。
+            if (count > 0 && namesPtr != IntPtr.Zero)
             {
-                string fieldName = NativeUtil.PtrToUtf8Required(namePtr);
-                if (schema.Vector(fieldName) is { } vectorSchema)
+                var names = new IntPtr[checked((int)count)];
+                Marshal.Copy(namesPtr, names, 0, (int)count);
+
+                foreach (IntPtr namePtr in names)
                 {
-                    object? vectorValue = DecodeVector(nativeDoc, fieldName, vectorSchema.DataType);
-                    if (vectorValue is not null)
+                    string fieldName = NativeUtil.PtrToUtf8Required(namePtr);
+                    if (schema.Vector(fieldName) is { } vectorSchema)
                     {
-                        doc.Vectors[fieldName] = vectorValue;
+                        object? vectorValue = DecodeVector(nativeDoc, fieldName, vectorSchema.DataType);
+                        if (vectorValue is not null)
+                        {
+                            doc.Vectors[fieldName] = vectorValue;
+                        }
                     }
-                }
-                else if (schema.Field(fieldName) is { } fieldSchema)
-                {
-                    doc.Fields[fieldName] = DecodeScalar(nativeDoc, fieldName, fieldSchema.DataType);
+                    else if (schema.Field(fieldName) is { } fieldSchema)
+                    {
+                        doc.Fields[fieldName] = DecodeScalar(nativeDoc, fieldName, fieldSchema.DataType);
+                    }
                 }
             }
         }
@@ -442,7 +465,7 @@ internal static unsafe class DocCodec
             case DataType.Binary:
             {
                 ReadPointer(doc, name, dataType, out IntPtr ptr, out nuint size);
-                byte[] bytes = new byte[(int)size];
+                byte[] bytes = new byte[checked((int)size)];
                 if (size > 0)
                 {
                     Marshal.Copy(ptr, bytes, 0, (int)size);

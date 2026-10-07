@@ -91,7 +91,7 @@ var bm25 = new BM25Embedding(["语料一", "语料二"], encodingType: "query");
 SparseVector sparse = bm25.Embed("查询");
 ```
 
-> **安全策略**：HTTP 嵌入客户端仅允许 http/https，且默认拒绝 localhost、环回、私有、链路本地与保留地址（防 SSRF）。**本地部署场景**（Ollama、vLLM、LM Studio 等）可显式传入 `allowLocalEndpoint: true` 放行，此时协议限制仍然生效：
+> **安全策略**：HTTP 嵌入客户端仅允许 http/https，且默认拒绝 localhost、环回、私有、链路本地、CGNAT（100.64/10）与保留地址（含 IPv4-mapped / NAT64 / 6to4 / Teredo / `::` 等 IPv4 承载与未指定形式，防 SSRF）。自建客户端不使用系统代理、不自动跟随重定向（3xx 视为错误）——若部署环境需要经代理出网，请传入自定义 `HttpClient` 并自行确保其安全策略。**本地部署场景**（Ollama、vLLM、LM Studio 等）可显式传入 `allowLocalEndpoint: true` 放行，此时协议限制仍然生效：
 >
 > ```csharp
 > var embedder = new OpenAIEmbedding(
@@ -185,6 +185,9 @@ builder.Services.AddZvecSets(
 - **HnswRabitqIndexParam**：C API 仅暴露 metric/quantize；`m`/`ef_construction`/`total_bits` 等使用引擎默认值。
 - **OptimizeOption / IndexOption 的 concurrency**：C API 未暴露线程数参数。
 - **ARRAY_BOOL**：支持写入；读回暂不支持（C API 位打包格式丢失长度信息）。
+- **ARRAY_STRING**：引擎读回时会丢弃空串元素（`["a", "", "b"]` 读回为 `["a", "b"]`），属 C API 序列化行为。
+- **空字段投影**：`outputFields` 传 null 表示全部标量字段；空列表一律拒绝（C API 在不同路径上把空投影分别解释为"全部字段"与"不取字段"，语义矛盾）。
+- **单路重排**：`reranker` 仅对多路（≥2 路）检索生效；单路/纯过滤查询传入非 null reranker 会抛 `ArgumentException`。
 - **BM25**：不依赖 dashtext 预训练编码器，仅支持用户提供 corpus 的本地训练路径；分词为 CJK 单字 + 拉丁词元。
 - **过滤表达式**：`filter` / 回填 `expression` 由引擎解析，属非参数化接口；来源不可信时调用方须自行校验（绑定层拒绝空串与 NUL 字节）。
 
@@ -206,7 +209,7 @@ src/Zvec.NET/                       # 核心包：P/Invoke 绑定（对照 c_api
 └── runtimes/win-x64/native/
 src/Zvec.NET.EntityFrameworkCore/  # EF Core 集成包：实体注解映射 + ZvecSet<TEntity> + 混合检索
 examples/Zvec.NET.Demo/             # 完整示例（含本地 Ollama bge-m3 语义检索，未安装时自动跳过）
-tests/                              # 测试（核心 73 项 + EF 集成 8 项，真实调用原生库）
+tests/                              # 测试（核心 123 项 + EF 集成 16 项，真实调用原生库）
 scripts/fetch-native.ps1            # 从 GitHub Releases 拉取原生 SDK
 ```
 

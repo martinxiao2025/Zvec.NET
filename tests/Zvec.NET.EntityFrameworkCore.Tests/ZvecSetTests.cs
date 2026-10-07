@@ -323,4 +323,35 @@ public sealed class ZvecSetTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => set.FindSimilarAsync(context, [1, 0, 0, 0], cancellationToken: cancelled.Token));
     }
+
+    // ============ 第五轮评审回归：fieldName 与查询形态的类型匹配 ============
+
+    public class DualVector
+    {
+        public int Id { get; set; }
+
+        [VectorField(Dimension = 2)]
+        public float[]? Dense { get; set; }
+
+        [VectorField]
+        public SparseVector? Sparse { get; set; }
+    }
+
+    [Fact]
+    public void SearchKindMustMatchFieldNameVectorType()
+    {
+        using ZvecSet<DualVector> set = ZvecSet<DualVector>.Create(NewDir());
+        set.Upsert(new DualVector { Id = 1, Dense = [1, 0], Sparse = new SparseVector([1u], [1f]) });
+
+        // 此前 fieldName 命中后不校验类型，错误延迟到原生编码层且信息误导。
+        ArgumentException sparseOnDense = Assert.Throws<ArgumentException>(
+            () => set.Search(new SparseVector([1u], [1f]), fieldName: "Dense"));
+        Assert.Contains("不匹配", sparseOnDense.Message);
+
+        ArgumentException denseOnSparse = Assert.Throws<ArgumentException>(
+            () => set.Search([1f, 0f], fieldName: "Sparse"));
+        Assert.Contains("不匹配", denseOnSparse.Message);
+
+        Assert.Equal("1", set.Search(new SparseVector([1u], [1f]), fieldName: "Sparse", topk: 1)[0].Id);
+    }
 }

@@ -8,15 +8,15 @@ public sealed unsafe partial class Collection
 {
     /// <summary>按单个主键取回文档。</summary>
     /// <param name="id">主键。</param>
-    /// <param name="outputFields">仅取回的标量字段；null = 全部。</param>
+    /// <param name="outputFields">仅取回的标量字段；null = 全部（不支持空列表）。</param>
     /// <param name="includeVector">是否取回向量。</param>
     /// <returns>主键到文档的映射；未命中不包含该键。</returns>
     public Dictionary<string, Doc> Fetch(string id, IReadOnlyList<string>? outputFields = null, bool includeVector = true) =>
         FetchInternal([id], includeVector, outputFields);
 
     /// <summary>按主键批量取回文档。</summary>
-    /// <param name="ids">主键集合。</param>
-    /// <param name="outputFields">仅取回的标量字段；null = 全部。</param>
+    /// <param name="ids">主键集合（元素不能为 null 或空串）。</param>
+    /// <param name="outputFields">仅取回的标量字段；null = 全部（不支持空列表）。</param>
     /// <param name="includeVector">是否取回向量。</param>
     /// <returns>主键到文档的映射；未命中不包含该键。</returns>
     public Dictionary<string, Doc> Fetch(IEnumerable<string> ids, IReadOnlyList<string>? outputFields = null, bool includeVector = true)
@@ -34,6 +34,8 @@ public sealed unsafe partial class Collection
                 throw new ArgumentException("主键不能为 null 或空串。", nameof(ids));
             }
         }
+
+        ValidateOutputFields(outputFields);
 
         using var lease = AcquireLease();
         using var arena = new NativeArena();

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Zvec.NET.EntityFrameworkCore;
 
@@ -119,8 +120,10 @@ internal sealed class EntityModel<[DynamicallyAccessedMembers(DynamicallyAccesse
         Scalars = scalars;
         Vectors = vectors;
 
-        KeyExpression = BuildKeyExpression();
-        KeyGetter = KeyExpression.Compile();
+        KeyExpression = BuildKeyExpression(invariantToString: false);
+        // 写入侧显式用不变文化：数值键的负号等符号在个别文化下 ToString 产生非 ASCII 字符，
+        // 而 EF 侧无参 ToString 翻译为 SQL CAST（恒为不变文化），两侧必须对齐。
+        KeyGetter = BuildKeyExpression(invariantToString: true).Compile();
     }
 
     private static bool IsKeyByConvention(PropertyInfo property) =>
@@ -182,27 +185,51 @@ internal sealed class EntityModel<[DynamicallyAccessedMembers(DynamicallyAccesse
         : property.PropertyType == typeof(double[]) ? DataType.ArrayDouble
         : null;
 
-    private Expression<Func<TEntity, string>> BuildKeyExpression()
+    private Expression<Func<TEntity, string>> BuildKeyExpression(bool invariantToString)
     {
-        // string 键直接取属性；数值/Guid 键调用实例 ToString()（写入侧 KeyGetter 与查询侧共用本表达式，两侧天然对齐）。
+        // string 键直接取属性；数值/Guid 键调用实例 ToString()。
+        // EF 翻译路径（invariantToString=false）必须用无参 ToString()——EF Core 仅翻译该重载（SQL CAST 恒为不变文化）。
         // 键类型为封闭集合（int/long/Guid），经 typeof(具体类型) 取 MethodInfo 满足裁剪分析器。
         ParameterExpression parameter = Expression.Parameter(typeof(TEntity), "e");
         Expression body = Expression.Property(parameter, Key.Property);
         if (Key.Property.PropertyType != typeof(string))
         {
-            MethodInfo toString = GetKeyToStringMethod(Key.Property.PropertyType)
+            MethodInfo toString = GetKeyToStringMethod(Key.Property.PropertyType, invariantToString)
                 ?? throw new InvalidOperationException($"键类型 {Key.Property.PropertyType.Name} 缺少 ToString()。");
-            body = Expression.Call(body, toString);
+            body = invariantToString
+                ? Expression.Call(body, toString, Expression.Constant(CultureInfo.InvariantCulture, typeof(IFormatProvider)))
+                : Expression.Call(body, toString);
+
+            if (!invariantToString && Key.Property.PropertyType == typeof(Guid))
+            {
+                // SQL Server 把 Guid 的 CONVERT 翻译成大写，而写入侧 Guid.ToString() 恒为小写；
+                // 查询侧统一 ToLower()（EF 可翻译为 LOWER）保证两侧命中。输入已是十六进制小写，文化无关。
+                body = Expression.Call(body, ToLowerMethod);
+            }
         }
 
         return Expression.Lambda<Func<TEntity, string>>(body, parameter);
     }
 
-    private static MethodInfo? GetKeyToStringMethod(Type keyType) => keyType == typeof(int)
-        ? typeof(int).GetMethod(nameof(int.ToString), Type.EmptyTypes)
-        : keyType == typeof(long)
-            ? typeof(long).GetMethod(nameof(long.ToString), Type.EmptyTypes)
-            : typeof(Guid).GetMethod(nameof(Guid.ToString), Type.EmptyTypes);
+    private static readonly MethodInfo ToLowerMethod =
+        typeof(string).GetMethod(nameof(string.ToLower), Type.EmptyTypes)!;
+
+    private static MethodInfo? GetKeyToStringMethod(Type keyType, bool invariantToString)
+    {
+        if (!invariantToString || keyType == typeof(Guid))
+        {
+            // Guid.ToString() 无文化差异；EF 翻译只认无参重载。
+            return keyType == typeof(int) ? typeof(int).GetMethod(nameof(int.ToString), Type.EmptyTypes)
+                : keyType == typeof(long) ? typeof(long).GetMethod(nameof(long.ToString), Type.EmptyTypes)
+                : typeof(Guid).GetMethod(nameof(Guid.ToString), Type.EmptyTypes);
+        }
+
+        return keyType == typeof(int)
+            ? typeof(int).GetMethod(nameof(int.ToString), [typeof(IFormatProvider)])
+            : keyType == typeof(long)
+                ? typeof(long).GetMethod(nameof(long.ToString), [typeof(IFormatProvider)])
+                : typeof(Guid).GetMethod(nameof(Guid.ToString), Type.EmptyTypes);
+    }
 
     internal Doc ToDoc(TEntity entity)
     {

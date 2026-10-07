@@ -192,24 +192,12 @@ internal static unsafe class ParamBuilder
         NativeUtil.ThrowIfNull(nativeSchema, "collection schema");
         try
         {
-            void AddField(string name, uint dataType, bool nullable, uint dimension, IndexParam? indexParam)
+            foreach (FieldSchema field in schema.Fields)
             {
-                IntPtr nativeField = BuildFieldSchema(name, dataType, nullable, dimension);
+                IntPtr nativeField = BuildFieldSchema(
+                    field.Name, (uint)field.DataType, field.Nullable, 0, field.IndexParam);
                 try
                 {
-                    if (indexParam is not null)
-                    {
-                        IntPtr indexParams = BuildIndexParam(indexParam);
-                        try
-                        {
-                            NativeUtil.ThrowIfError(NativeMethods.zvec_field_schema_set_index_params(nativeField, indexParams));
-                        }
-                        finally
-                        {
-                            NativeMethods.zvec_index_params_destroy(indexParams);
-                        }
-                    }
-
                     NativeUtil.ThrowIfError(NativeMethods.zvec_collection_schema_add_field(nativeSchema, nativeField));
                 }
                 finally
@@ -218,14 +206,18 @@ internal static unsafe class ParamBuilder
                 }
             }
 
-            foreach (FieldSchema field in schema.Fields)
-            {
-                AddField(field.Name, (uint)field.DataType, field.Nullable, dimension: 0, field.IndexParam);
-            }
-
             foreach (VectorSchema vector in schema.Vectors)
             {
-                AddField(vector.Name, (uint)vector.DataType, vector.Nullable, vector.Dimension, vector.IndexParam);
+                IntPtr nativeField = BuildFieldSchema(
+                    vector.Name, (uint)vector.DataType, vector.Nullable, vector.Dimension, vector.IndexParam);
+                try
+                {
+                    NativeUtil.ThrowIfError(NativeMethods.zvec_collection_schema_add_field(nativeSchema, nativeField));
+                }
+                finally
+                {
+                    NativeMethods.zvec_field_schema_destroy(nativeField);
+                }
             }
 
             IntPtr result = nativeSchema;
@@ -241,11 +233,34 @@ internal static unsafe class ParamBuilder
         }
     }
 
-    internal static IntPtr BuildFieldSchema(string name, uint dataType, bool nullable, uint dimension)
+    /// <summary>构建原生字段 schema（调用方拥有，field_schema_destroy 释放）；indexParam 非空时挂接索引参数。</summary>
+    internal static IntPtr BuildFieldSchema(string name, uint dataType, bool nullable, uint dimension, IndexParam? indexParam = null)
     {
         IntPtr field = NativeMethods.zvec_field_schema_create(name, dataType, nullable, dimension);
         NativeUtil.ThrowIfNull(field, $"field schema {name}");
-        return field;
+        try
+        {
+            if (indexParam is not null)
+            {
+                IntPtr indexParams = BuildIndexParam(indexParam);
+                try
+                {
+                    // set 为深拷贝语义，参数对象随后由本方法销毁。
+                    NativeUtil.ThrowIfError(NativeMethods.zvec_field_schema_set_index_params(field, indexParams));
+                }
+                finally
+                {
+                    NativeMethods.zvec_index_params_destroy(indexParams);
+                }
+            }
+
+            return field;
+        }
+        catch
+        {
+            NativeMethods.zvec_field_schema_destroy(field);
+            throw;
+        }
     }
 
     /// <summary>从原生 CollectionSchema 读取托管镜像（nativeSchema 必须保持存活）。</summary>
@@ -258,7 +273,7 @@ internal static unsafe class ParamBuilder
             nativeSchema, out IntPtr namesPtr, out nuint count));
         try
         {
-            var names = new IntPtr[(int)count];
+            var names = new IntPtr[checked((int)count)];
             Marshal.Copy(namesPtr, names, 0, (int)count);
 
             foreach (IntPtr namePtr in names)

@@ -74,14 +74,20 @@ public interface IZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMembe
     /// <param name="fieldName">向量属性名（null = 首个稀疏向量属性）。</param>
     IReadOnlyList<SearchHit> Search(SparseVector vector, int topk = 10, string? filter = null, string? fieldName = null);
 
-    /// <summary>检索并回查 EF 实体：向量集合拿键与得分，再从 DbContext 取实体（混合检索闭环）。</summary>
+    /// <summary>
+    /// 检索并回查 EF 实体：向量集合拿键与得分，再从 DbContext 取实体（混合检索闭环）。
+    /// 仅返回 EF 中仍存在的实体——向量集合中存在但 DbContext 查不到的行（如 upsert 后被删除）会被静默跳过，
+    /// 结果可能少于 topk。
+    /// </summary>
     /// <param name="context">EF Core DbContext。</param>
     /// <param name="vector">查询向量。</param>
     /// <param name="topk">返回条数。</param>
     /// <param name="filter">引擎端布尔过滤表达式（可为 null）。</param>
+    /// <param name="fieldName">向量属性名（null = 首个 FP32 向量属性）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     Task<List<SearchHit<TEntity>>> FindSimilarAsync(
-        DbContext context, float[] vector, int topk = 10, string? filter = null, CancellationToken cancellationToken = default);
+        DbContext context, float[] vector, int topk = 10, string? filter = null,
+        string? fieldName = null, CancellationToken cancellationToken = default);
 }
 
 /// <summary>IZvecSet 的默认实现。</summary>
@@ -190,11 +196,12 @@ public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMem
 
     /// <inheritdoc/>
     public async Task<List<SearchHit<TEntity>>> FindSimilarAsync(
-        DbContext context, float[] vector, int topk = 10, string? filter = null, CancellationToken cancellationToken = default)
+        DbContext context, float[] vector, int topk = 10, string? filter = null,
+        string? fieldName = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
-        IReadOnlyList<SearchHit> hits = Search(vector, topk, filter);
+        IReadOnlyList<SearchHit> hits = Search(vector, topk, filter, fieldName);
         if (hits.Count == 0)
         {
             return [];
@@ -236,6 +243,12 @@ public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMem
             {
                 if (vector.Property.Name == fieldName)
                 {
+                    if (vector.DataType != expected)
+                    {
+                        throw new ArgumentException(
+                            $"属性 {fieldName} 是 {vector.DataType} 向量，与查询形态（{expected}）不匹配。", nameof(fieldName));
+                    }
+
                     return fieldName;
                 }
             }

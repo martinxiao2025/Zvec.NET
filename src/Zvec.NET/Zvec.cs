@@ -152,9 +152,10 @@ public static class Zvec
 
     private static void ValidateRatio(float? value, string name)
     {
-        if (value is < 0f or > 1f)
+        // NaN 与任何比较均为 false，若不显式拒绝会以 NaN 直达引擎配置（未定义行为）。
+        if (value is { } v && (float.IsNaN(v) || v is < 0f or > 1f))
         {
-            throw new ArgumentOutOfRangeException($"ZvecOptions.{name} 必须在 [0,1] 区间，实际为 {value}。");
+            throw new ArgumentOutOfRangeException($"ZvecOptions.{name} 必须在 [0,1] 区间，实际为 {v:R}。");
         }
     }
 
@@ -171,6 +172,7 @@ public static class Zvec
     /// <param name="option">打开选项（可选）。</param>
     public static Collection CreateAndOpen(string path, CollectionSchema schema, CollectionOption? option = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentNullException.ThrowIfNull(schema);
 
         IntPtr nativeSchema = ParamBuilder.BuildCollectionSchema(schema);
@@ -198,6 +200,7 @@ public static class Zvec
     /// <param name="option">打开选项（只读/mmap 等，可选）。</param>
     public static Collection Open(string path, CollectionOption? option = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         IntPtr nativeOptions = ParamBuilder.BuildCollectionOptions(option);
         try
         {

@@ -44,7 +44,7 @@ public sealed unsafe partial class Collection : IDisposable
         }
     }
 
-    /// <summary>集合路径（打开时传入）。经 <see cref="Zvec.Open"/> 打开时为空串。</summary>
+    /// <summary>集合路径（打开/创建时传入）。</summary>
     public string Path => _path;
 
     /// <summary>集合 Schema 托管镜像。DDL 操作后自动刷新。</summary>
@@ -142,6 +142,32 @@ public sealed unsafe partial class Collection : IDisposable
         return ValidateExpression(filter, nameof(filter));
     }
 
+    /// <summary>
+    /// 标量字段投影校验：null = 返回全部标量字段；空列表拒绝——C API 在单路查询与 Fetch 路径上
+    /// 把空投影归一为"全部字段"、在 MultiQuery/迭代器路径上又表示"不取任何字段"，语义互相矛盾，
+    /// 且 null 元素在单路查询路径会以 NULL char* 进入引擎（未定义行为）。
+    /// </summary>
+    private static void ValidateOutputFields(IReadOnlyList<string>? outputFields)
+    {
+        if (outputFields is null)
+        {
+            return;
+        }
+
+        if (outputFields.Count == 0)
+        {
+            throw new ArgumentException("outputFields 不能为空列表：需要全部字段请传 null。", nameof(outputFields));
+        }
+
+        foreach (string? field in outputFields)
+        {
+            if (string.IsNullOrEmpty(field))
+            {
+                throw new ArgumentException("outputFields 包含 null 或空串的字段名。", nameof(outputFields));
+            }
+        }
+    }
+
     // =========================================================================
     // DML：写入
     // =========================================================================
@@ -185,6 +211,7 @@ public sealed unsafe partial class Collection : IDisposable
         {
             for (int i = 0; i < docList.Length; i++)
             {
+                ArgumentNullException.ThrowIfNull(docList[i], $"{nameof(docs)}[{i}]");
                 nativeDocs[i] = DocCodec.BuildDoc(docList[i], Schema);
             }
 
@@ -256,12 +283,20 @@ public sealed unsafe partial class Collection : IDisposable
     public WriteResult Delete(string id) => Delete([id])[0];
 
     /// <summary>按 ID 删除文档。</summary>
-    /// <param name="ids">主键集合。</param>
+    /// <param name="ids">主键集合（元素不能为 null 或空串）。</param>
     public WriteResult[] Delete(IEnumerable<string> ids)
     {
         ArgumentNullException.ThrowIfNull(ids);
 
         string[] idList = [.. ids];
+        foreach (string? id in idList)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new ArgumentException("主键不能为 null 或空串。", nameof(ids));
+            }
+        }
+
         if (idList.Length == 0)
         {
             return [];

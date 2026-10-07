@@ -42,7 +42,9 @@ public abstract class EmbeddingHttpClientBase : IDisposable
     /// <param name="baseUrl">端点基址（仅 http/https）。</param>
     /// <param name="model">模型名。</param>
     /// <param name="apiKey">API Key（Bearer）；null 表示匿名。</param>
-    /// <param name="httpClient">自定义 HttpClient；不传则自建（含建连时刻安全校验与 5 分钟连接回收）。</param>
+    /// <param name="httpClient">自定义 HttpClient；不传则自建（含建连时刻安全校验与 5 分钟连接回收）。
+    /// 注意：外部客户端由调用方负责安全策略——必须禁用自动重定向（或对每个重定向目标执行等价校验），
+    /// 否则 3xx 跳转可绕过本库的发送前校验。</param>
     /// <param name="timeout">请求超时（默认 30 秒，仅自建客户端生效）。</param>
     /// <param name="allowLocalEndpoint">放行 localhost/环回/私有/保留地址的端点，用于本地部署的
     /// 嵌入服务（Ollama、vLLM 等）；默认 false（安全策略拒绝）。放行时协议限制不变。</param>
@@ -69,6 +71,11 @@ public abstract class EmbeddingHttpClientBase : IDisposable
             {
                 // 定期回收连接，避免长生命周期进程持有过期 DNS 的连接。
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                // 嵌入端点为固定直连服务：禁系统代理（代理会接管目标解析，使建连时刻校验失效，
+                // 且内网代理会被默认策略拒绝导致不可用），禁自动重定向（3xx 视为错误快速失败，
+                // 防止凭据经重定向泄漏到非预期目标）。
+                UseProxy = false,
+                AllowAutoRedirect = false,
             };
             if (!allowLocalEndpoint)
             {
@@ -84,9 +91,9 @@ public abstract class EmbeddingHttpClientBase : IDisposable
     /// <summary>Web 风格（camelCase）的 JSON 序列化选项。</summary>
     protected static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    /// <summary>发送前校验目标 URL：仅 http/https；未放行本地端点时 host 不得为 localhost 字面量。
-    /// DNS 层校验视 <paramref name="validateDns"/> 而定（外部 HttpClient 无法接管建连，必须在此校验）。</summary>
-    internal static void ValidateRequestUri(Uri uri, bool validateDns = true, bool allowLocalEndpoint = false)
+    /// <summary>发送前校验目标 URL：仅 http/https；未放行本地端点时 host 不得为 localhost 字面量，
+    /// 并按 <paramref name="validateDns"/> 异步解析校验全部 IP（外部 HttpClient 无法接管建连，必须在此校验）。</summary>
+    internal static async Task ValidateRequestUriAsync(Uri uri, bool validateDns = true, bool allowLocalEndpoint = false)
     {
         if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
         {
@@ -103,7 +110,7 @@ public abstract class EmbeddingHttpClientBase : IDisposable
 
         if (validateDns)
         {
-            ValidateHostAddresses(uri.Host);
+            await ValidateHostAddressesAsync(uri.Host).ConfigureAwait(false);
         }
     }
 
@@ -115,12 +122,12 @@ public abstract class EmbeddingHttpClientBase : IDisposable
         }
     }
 
-    private static void ValidateHostAddresses(string host)
+    private static async Task ValidateHostAddressesAsync(string host)
     {
         IPAddress[] addresses;
         try
         {
-            addresses = Dns.GetHostAddresses(host);
+            addresses = await Dns.GetHostAddressesAsync(host).ConfigureAwait(false);
         }
         catch (SocketException ex)
         {
@@ -165,6 +172,8 @@ public abstract class EmbeddingHttpClientBase : IDisposable
                 or >= 0xAC100000 and <= 0xAC1FFFFF               // 172.16.0.0/12
                 or >= 0xC0A80000 and <= 0xC0A8FFFF               // 192.168.0.0/16
                 or >= 0xA9FE0000 and <= 0xA9FEFFFF               // 169.254.0.0/16 链路本地
+                or >= 0x64400000 and <= 0x647FFFFF               // 100.64.0.0/10 CGNAT/共享地址空间
+                or >= 0xC6120000 and <= 0xC613FFFF               // 198.18.0.0/15 基准测试
                 or 0x00000000                                      // 0.0.0.0 未指定
                 or >= 0xE0000000 and <= 0xEFFFFFFF                // 224.0.0.0/4 多播
                 or >= 0xF0000000;                                  // 240.0.0.0/4 保留
@@ -172,10 +181,16 @@ public abstract class EmbeddingHttpClientBase : IDisposable
 
         if (address.AddressFamily == AddressFamily.InterNetworkV6 && bytes.Length == 16)
         {
-            // NAT64 Well-Known Prefix（64:ff9b::/96）：末 4 字节即被转换的 IPv4 地址。
+            // 全零（::，IPv6 未指定地址）：Linux 内核按环回处理，等价 0.0.0.0，必须拦截。
+            if (bytes.AsSpan().IndexOfAnyExcept((byte)0) < 0)
+            {
+                return true;
+            }
+
+            // NAT64（Well-Known 64:ff9b::/96 与 RFC 8215 本地 64:ff9b:1::/48）：末 4 字节即被转换的 IPv4。
             if (bytes[0] == 0x00 && bytes[1] == 0x64 && bytes[2] == 0xFF && bytes[3] == 0x9B
-                && bytes[4] == 0 && bytes[5] == 0 && bytes[6] == 0 && bytes[7] == 0
-                && bytes[8] == 0 && bytes[9] == 0 && bytes[10] == 0 && bytes[11] == 0)
+                && bytes[4] == 0 && (bytes[5] == 0 || bytes[5] == 1)
+                && bytes.AsSpan(6, 6).IndexOfAnyExcept((byte)0) < 0)
             {
                 return IsDisallowedAddress(new IPAddress(bytes[12..16]));
             }
@@ -184,6 +199,12 @@ public abstract class EmbeddingHttpClientBase : IDisposable
             if (bytes[0] == 0x20 && bytes[1] == 0x02)
             {
                 return IsDisallowedAddress(new IPAddress(bytes[2..6]));
+            }
+
+            // 已废弃的 IPv4 兼容格式（::a.b.c.d，前 12 字节为零且非全零）：按内嵌 IPv4 递归校验。
+            if (bytes.AsSpan(0, 12).IndexOfAnyExcept((byte)0) < 0)
+            {
+                return IsDisallowedAddress(new IPAddress(bytes[12..16]));
             }
 
             // Teredo（2001:0::/32）。
@@ -230,6 +251,9 @@ public abstract class EmbeddingHttpClientBase : IDisposable
     /// <summary>嵌入响应体大小上限：防御异常端点返回超大 body 打爆内存（合法大批量嵌入远小于该值）。</summary>
     private const int MaxResponseBodyBytes = 256 * 1024 * 1024;
 
+    /// <summary>错误消息中携带的响应体前缀长度。</summary>
+    private const int ErrorBodyPrefixBytes = 512;
+
     /// <summary>POST JSON 并解析响应；发送前执行 URL 安全校验（自有客户端跳过 DNS 重复校验）。</summary>
     /// <param name="path">相对路径（如 "/embeddings"）。</param>
     /// <param name="payload">请求体（将按 Web 风格序列化）。</param>
@@ -237,7 +261,8 @@ public abstract class EmbeddingHttpClientBase : IDisposable
     protected async Task<JsonDocument> PostJsonAsync(string path, object payload, CancellationToken cancellationToken)
     {
         Uri uri = new(BaseUrl + path);
-        ValidateRequestUri(uri, validateDns: !_connectTimeValidation, allowLocalEndpoint: _allowLocalEndpoint);
+        await ValidateRequestUriAsync(uri, validateDns: !_connectTimeValidation, allowLocalEndpoint: _allowLocalEndpoint)
+            .ConfigureAwait(false);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, uri)
         {
@@ -250,23 +275,28 @@ public abstract class EmbeddingHttpClientBase : IDisposable
 
         using HttpResponseMessage response = await _httpClient.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        string body = await ReadBodyCappedAsync(response.Content, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
+            // 自建客户端禁用自动重定向，3xx 同样走此分支；错误体只读前缀，超大 body 不占内存。
+            string errorBody = await ReadBodyPrefixAsync(response.Content, ErrorBodyPrefixBytes, cancellationToken)
+                .ConfigureAwait(false);
             throw new HttpRequestException(
-                $"嵌入服务返回 {(int)response.StatusCode}：{Truncate(body, 512)}", null, response.StatusCode);
+                $"嵌入服务返回 {(int)response.StatusCode}：{Truncate(errorBody, ErrorBodyPrefixBytes)}",
+                null, response.StatusCode);
         }
 
+        string body = await ReadBodyCappedAsync(response.Content, cancellationToken).ConfigureAwait(false);
         return JsonDocument.Parse(body);
     }
 
-    /// <summary>限量读取响应体（Content-Length 预检 + 流式累计校验），超限抛出而非 OOM。</summary>
+    /// <summary>限量读取响应体（Content-Length 预检 + 流式累计校验），超限抛出而非 OOM；
+    /// 跳过可选的 UTF-8 BOM（部分 Windows 网关会在 application/json 前附加 BOM）。</summary>
     private static async Task<string> ReadBodyCappedAsync(HttpContent content, CancellationToken cancellationToken)
     {
-        if (content.Headers.ContentLength is > MaxResponseBodyBytes)
+        if (content.Headers.ContentLength is long declaredLength && declaredLength > MaxResponseBodyBytes)
         {
             throw new HttpRequestException(
-                $"嵌入服务响应体过大（{content.Headers.ContentLength:N0} 字节，上限 {MaxResponseBodyBytes:N0}）。");
+                $"嵌入服务响应体过大（{declaredLength:N0} 字节，上限 {MaxResponseBodyBytes:N0}）。");
         }
 
         await using Stream stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -285,8 +315,28 @@ public abstract class EmbeddingHttpClientBase : IDisposable
             buffer.Write(chunk, 0, read);
         }
 
-        return Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length);
+        return DecodeUtf8SkippingBom(buffer.GetBuffer(), (int)buffer.Length);
     }
+
+    /// <summary>读取响应体开头若干字节即停（错误消息用），并跳过可选的 UTF-8 BOM。</summary>
+    private static async Task<string> ReadBodyPrefixAsync(HttpContent content, int maxBytes, CancellationToken cancellationToken)
+    {
+        await using Stream stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        byte[] buffer = new byte[maxBytes + 3];
+        int total = 0;
+        while (total < buffer.Length
+            && await stream.ReadAsync(buffer.AsMemory(total), cancellationToken).ConfigureAwait(false) is int read && read > 0)
+        {
+            total += read;
+        }
+
+        return DecodeUtf8SkippingBom(buffer, total);
+    }
+
+    private static string DecodeUtf8SkippingBom(byte[] raw, int length) =>
+        length >= 3 && raw[0] == 0xEF && raw[1] == 0xBB && raw[2] == 0xBF
+            ? Encoding.UTF8.GetString(raw, 3, length - 3)
+            : Encoding.UTF8.GetString(raw, 0, length);
 
     /// <summary>
     /// 同步等待嵌入请求：经 Task.Run 脱离调用方的同步上下文，

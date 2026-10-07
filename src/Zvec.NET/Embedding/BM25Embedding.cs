@@ -51,6 +51,11 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
 
         foreach (string document in documents)
         {
+            if (document is null)
+            {
+                throw new ArgumentException("训练语料包含 null 文档。", nameof(corpus));
+            }
+
             Dictionary<string, int> termFreqs = CountTokens(Tokenize(document));
             docTermFreqs.Add(termFreqs);
             totalLength += termFreqs.Values.Sum();

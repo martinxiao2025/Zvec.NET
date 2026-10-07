@@ -50,22 +50,22 @@ public sealed class LocalEndpointPolicyTests
     [InlineData("http://[::1]:11434/v1")]
     [InlineData("http://192.168.1.10:11434/v1")]
     [InlineData("http://10.0.0.5:8080/v1")]
-    public void AllowLocalEndpointSkipsAddressChecks(string url) =>
-        EmbeddingHttpClientBase.ValidateRequestUri(new Uri(url), allowLocalEndpoint: true);
+    public async Task AllowLocalEndpointSkipsAddressChecks(string url) =>
+        await EmbeddingHttpClientBase.ValidateRequestUriAsync(new Uri(url), allowLocalEndpoint: true);
 
     [Theory]
     [InlineData("file://localhost/v1")]
     [InlineData("ftp://127.0.0.1/v1")]
-    public void AllowLocalEndpointStillEnforcesHttpScheme(string url) =>
-        Assert.Throws<NotSupportedException>(
-            () => EmbeddingHttpClientBase.ValidateRequestUri(new Uri(url), allowLocalEndpoint: true));
+    public async Task AllowLocalEndpointStillEnforcesHttpScheme(string url) =>
+        await Assert.ThrowsAsync<NotSupportedException>(
+            () => EmbeddingHttpClientBase.ValidateRequestUriAsync(new Uri(url), allowLocalEndpoint: true));
 
     [Fact]
-    public void DefaultPolicyStillRejectsLocalhost()
+    public async Task DefaultPolicyStillRejectsLocalhost()
     {
         // 回归保障：不传 allowLocalEndpoint 时安全策略照旧生效。
-        Assert.Throws<NotSupportedException>(() =>
-            EmbeddingHttpClientBase.ValidateRequestUri(new Uri("http://localhost:11434/v1")));
+        await Assert.ThrowsAsync<NotSupportedException>(
+            () => EmbeddingHttpClientBase.ValidateRequestUriAsync(new Uri("http://localhost:11434/v1")));
         using var embedding = new OpenAIEmbedding(baseUrl: "http://localhost:11434/v1");
         Assert.Throws<NotSupportedException>(() => embedding.Embed("hi"));
     }

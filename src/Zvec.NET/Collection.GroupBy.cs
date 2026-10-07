@@ -13,6 +13,16 @@ public sealed partial class Collection
     {
         ArgumentNullException.ThrowIfNull(query);
         ValidateIdentifier(groupByFieldName, nameof(groupByFieldName));
+        if (groupCount < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(groupCount), groupCount, "groupCount 至少为 1。");
+        }
+
+        if (topkPerGroup < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(topkPerGroup), topkPerGroup, "topkPerGroup 至少为 1。");
+        }
+
         if (Schema.Field(groupByFieldName) is null)
         {
             throw new ArgumentException($"分组字段 {groupByFieldName} 不在集合 schema 中。", nameof(groupByFieldName));
@@ -31,7 +41,9 @@ public sealed partial class Collection
         var groups = new Dictionary<string, List<Doc>>();
         foreach (Doc doc in candidates)
         {
-            string key = doc.Field(groupByFieldName)?.ToString() ?? "<null>";
+            string key = doc.Field(groupByFieldName) is { } fieldValue
+                ? Convert.ToString(fieldValue, System.Globalization.CultureInfo.InvariantCulture) ?? ""
+                : "<null>";
             if (!groups.TryGetValue(key, out List<Doc>? group))
             {
                 if (groups.Count >= groupCount)

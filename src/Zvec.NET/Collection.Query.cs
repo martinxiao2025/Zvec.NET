@@ -6,12 +6,13 @@ namespace Zvec.NET;
 /// <summary>Collection 的向量 / 全文检索执行能力。</summary>
 public sealed unsafe partial class Collection
 {
-    /// <summary>向量/全文检索（单路；对齐 Python Collection.query 的单 query 形态）。</summary>
+    /// <summary>向量/全文检索（单路；对齐 Python Collection.query 的单 query 形态）。
+    /// reranker 仅对多路检索生效：单路传入非 null 将抛出 <see cref="ArgumentException"/>（无路可合并）。</summary>
     public IReadOnlyList<Doc> Query(Query? query = null, int topk = 10, string? filter = null,
         bool includeVector = false, IReadOnlyList<string>? outputFields = null, IReRanker? reranker = null) =>
         QueryCore(query is null ? [] : [query], topk, filter, includeVector, outputFields, reranker);
 
-    /// <summary>多路检索 + 重排（对齐 Python Collection.query 的多 query 形态）。</summary>
+    /// <summary>多路检索 + 重排（对齐 Python Collection.query 的多 query 形态）。多路（&gt;1）必须提供 reranker。</summary>
     public IReadOnlyList<Doc> Query(IReadOnlyList<Query> queries, int topk = 10, string? filter = null,
         bool includeVector = false, IReadOnlyList<string>? outputFields = null, IReRanker? reranker = null) =>
         QueryCore(queries, topk, filter, includeVector, outputFields, reranker);
@@ -19,6 +20,14 @@ public sealed unsafe partial class Collection
     private IReadOnlyList<Doc> QueryCore(IReadOnlyList<Query> queries, int topk, string? filter,
         bool includeVector, IReadOnlyList<string>? outputFields, IReRanker? reranker)
     {
+        ArgumentNullException.ThrowIfNull(queries);
+        if (topk < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(topk), topk, "topk 必须为正数。");
+        }
+
+        ValidateOutputFields(outputFields);
+
         // 布尔过滤表达式由引擎端求值；此处仅做边界校验（非空/NUL）。
         string? safeFilter = ValidateFilter(filter);
 
@@ -26,12 +35,22 @@ public sealed unsafe partial class Collection
         if (singleDense)
         {
             // C API 单路路径：稠密向量 + FTS。
+            if (reranker is not null)
+            {
+                throw new ArgumentException("单路查询无需重排（reranker 仅对多路检索生效）。", nameof(reranker));
+            }
+
             return ExecuteSingleQuery(queries[0], topk, safeFilter, includeVector, outputFields);
         }
 
         if (queries.Count == 0)
         {
-            // 无查询载荷：纯过滤 / 全表形态。
+            // 无查询载荷：纯过滤 / 全表形态；无路可重排，reranker 语义与单路一致地拒绝。
+            if (reranker is not null)
+            {
+                throw new ArgumentException("纯过滤查询无需重排（reranker 仅对多路检索生效）。", nameof(reranker));
+            }
+
             return ExecuteSingleQuery(null, topk, safeFilter, includeVector, outputFields);
         }
 
@@ -39,7 +58,13 @@ public sealed unsafe partial class Collection
         // 且 MultiQuery 要求至少 2 路 —— 复制为两路相同子查询后用 RRF 合并（结果等价原序）。
         if (queries.Count == 1)
         {
-            return ExecuteSingleOrSparse(queries[0], topk, safeFilter, includeVector, outputFields);
+            if (reranker is not null and not RrfReRanker)
+            {
+                throw new ArgumentException(
+                    "单路查询无需重排；稀疏单路的等价双路合并仅支持 RrfReRanker（或传 null 用默认 RRF）。", nameof(reranker));
+            }
+
+            return ExecuteSingleOrSparse(queries[0], topk, safeFilter, includeVector, outputFields, reranker as RrfReRanker);
         }
 
         // 多路 → MultiQuery。
@@ -70,15 +95,15 @@ public sealed unsafe partial class Collection
         Schema.Vector(fieldName) is { } vector && SchemaUtil.IsSparseVectorDataType(vector.DataType);
 
     private Doc[] ExecuteSingleOrSparse(Query query, int topk, string? safeFilter,
-        bool includeVector, IReadOnlyList<string>? outputFields)
+        bool includeVector, IReadOnlyList<string>? outputFields, RrfReRanker? reranker = null)
     {
         if (!IsSparseQuery(query))
         {
             return ExecuteSingleQuery(query, topk, safeFilter, includeVector, outputFields);
         }
 
-        // 稀疏借道双路 MultiQuery + RRF（等价原序）。
-        return ExecuteMultiQueryNative([query, query], new RrfReRanker(), topk, safeFilter, includeVector, outputFields);
+        // 稀疏借道双路 MultiQuery + RRF（等价原序）；尊重调用方指定的 RRF 参数（如 RankConstant）。
+        return ExecuteMultiQueryNative([query, query], reranker ?? new RrfReRanker(), topk, safeFilter, includeVector, outputFields);
     }
 
     private Doc[] ExecuteSingleQuery(Query? query, int topk, string? safeFilter,
@@ -356,21 +381,29 @@ public sealed unsafe partial class Collection
 
     private Doc[] ReadDocArray(IntPtr results, nuint count)
     {
+        // 空结果时引擎可能返回 NULL 指针 + count=0（同 Fetch 路径）：Marshal.Copy 对空指针
+        // 无条件抛 ArgumentNullException（即使长度为 0），必须先判空。
         try
         {
-            var docs = new IntPtr[(int)count];
-            Marshal.Copy(results, docs, 0, (int)count);
             Doc[] output = new Doc[(int)count];
-            for (int i = 0; i < docs.Length; i++)
+            if (count > 0 && results != IntPtr.Zero)
             {
-                output[i] = DocCodec.ReadDoc(docs[i], Schema);
+                var docs = new IntPtr[(int)count];
+                Marshal.Copy(results, docs, 0, (int)count);
+                for (int i = 0; i < docs.Length; i++)
+                {
+                    output[i] = DocCodec.ReadDoc(docs[i], Schema);
+                }
             }
 
             return output;
         }
         finally
         {
-            NativeMethods.zvec_docs_free(results, count);
+            if (results != IntPtr.Zero)
+            {
+                NativeMethods.zvec_docs_free(results, count);
+            }
         }
     }
 }

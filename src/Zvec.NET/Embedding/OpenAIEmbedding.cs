@@ -143,6 +143,27 @@ public sealed class QwenDenseEmbedding : EmbeddingHttpClientBase, IDenseEmbeddin
         using JsonDocument response = PostJsonSync("/embeddings", payload);
         return ParseEmbedding(ReadFirstEmbedding(response));
     }
+
+    /// <summary>异步编码单个文本。</summary>
+    /// <param name="input">输入文本。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<float[]> EmbedAsync(string input, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(input);
+        var payload = new Dictionary<string, object?>
+        {
+            ["model"] = Model,
+            ["input"] = input,
+            ["dimensions"] = _dimension,
+        };
+        if (TextType is not null)
+        {
+            payload["text_type"] = TextType;
+        }
+
+        using JsonDocument response = await PostJsonAsync("/embeddings", payload, cancellationToken).ConfigureAwait(false);
+        return ParseEmbedding(ReadFirstEmbedding(response));
+    }
 }
 
 /// <summary>Jina 稠密嵌入（对齐 Python JinaDenseEmbedding；Jina /v1/embeddings 兼容 OpenAI 协议）。</summary>
@@ -185,6 +206,26 @@ public sealed class JinaEmbedding : EmbeddingHttpClientBase, IDenseEmbeddingFunc
         }
 
         using JsonDocument response = PostJsonSync("/embeddings", payload);
+        return ParseEmbedding(ReadFirstEmbedding(response));
+    }
+
+    /// <summary>异步编码单个文本。</summary>
+    /// <param name="input">输入文本。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<float[]> EmbedAsync(string input, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(input);
+        var payload = new Dictionary<string, object?>
+        {
+            ["model"] = Model,
+            ["input"] = new[] { input },
+        };
+        if (_dimension is not null)
+        {
+            payload["dimensions"] = _dimension;
+        }
+
+        using JsonDocument response = await PostJsonAsync("/embeddings", payload, cancellationToken).ConfigureAwait(false);
         return ParseEmbedding(ReadFirstEmbedding(response));
     }
 }
