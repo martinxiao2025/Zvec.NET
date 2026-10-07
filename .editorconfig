@@ -1,0 +1,29 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csproj,props,targets}]
+indent_size = 4
+indent_style = space
+
+[*.cs]
+# 以现有代码风格为准：显式访问修饰符（公共 API 一致声明 public）。
+dotnet_style_require_accessibility_modifiers = always:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_prefer_braces = true:warning
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_throw_expression = true:suggestion
+dotnet_sort_system_directives_first = false
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+
+[*.{xml,md,json,yml,yaml}]
+indent_size = 2
+
+[*.ps1]
+indent_size = 4

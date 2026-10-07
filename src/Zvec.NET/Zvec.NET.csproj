@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Zvec.NET</RootNamespace>
     <AssemblyName>Zvec.NET</AssemblyName>
     <PackageId>Zvec.NET</PackageId>
@@ -13,11 +12,10 @@
     <RepositoryUrl>https://github.com/alibaba/zvec</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://zvec.org</PackageProjectUrl>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591;CA2255</NoWarn>
+    <!-- CA2255（ModuleInitializer 不宜用于库）：ZvecNative 需在首次 P/Invoke 前安装 DllImport 解析器，属有意取舍。 -->
+    <NoWarn>$(NoWarn);CA2255</NoWarn>
     <!-- README 随 NuGet 包展示 -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- 将 runtimes/ 下的原生库打进 NuGet 包 -->

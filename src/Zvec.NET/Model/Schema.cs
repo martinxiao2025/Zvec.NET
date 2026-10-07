@@ -6,14 +6,23 @@ namespace Zvec.NET;
 /// </summary>
 public sealed class FieldSchema
 {
+    /// <summary>字段名。</summary>
     public string Name { get; }
 
+    /// <summary>字段数据类型（非向量类型）。</summary>
     public DataType DataType { get; }
 
+    /// <summary>是否允许 NULL。</summary>
     public bool Nullable { get; set; }
 
+    /// <summary>字段索引参数（可选）。</summary>
     public IndexParam? IndexParam { get; set; }
 
+    /// <summary>构造标量字段定义。</summary>
+    /// <param name="name">字段名。</param>
+    /// <param name="dataType">数据类型。</param>
+    /// <param name="nullable">是否允许 NULL。</param>
+    /// <param name="indexParam">索引参数。</param>
     public FieldSchema(string name, DataType dataType, bool nullable = false, IndexParam? indexParam = null)
     {
         if (SchemaUtil.IsVectorDataType(dataType))
@@ -34,16 +43,27 @@ public sealed class FieldSchema
 /// </summary>
 public sealed class VectorSchema
 {
+    /// <summary>字段名。</summary>
     public string Name { get; }
 
+    /// <summary>向量数据类型。</summary>
     public DataType DataType { get; }
 
+    /// <summary>是否允许 NULL。</summary>
     public bool Nullable { get; set; }
 
+    /// <summary>稠密向量维度（稀疏向量为 0）。</summary>
     public uint Dimension { get; }
 
+    /// <summary>索引参数（可选）。</summary>
     public IndexParam? IndexParam { get; set; }
 
+    /// <summary>构造向量字段定义。</summary>
+    /// <param name="name">字段名。</param>
+    /// <param name="dataType">向量类型。</param>
+    /// <param name="dimension">稠密维度（稀疏为 0）。</param>
+    /// <param name="nullable">是否允许 NULL。</param>
+    /// <param name="indexParam">索引参数。</param>
     public VectorSchema(string name, DataType dataType, uint dimension, bool nullable = false, IndexParam? indexParam = null)
     {
         if (!SchemaUtil.IsDenseVectorDataType(dataType) && !SchemaUtil.IsSparseVectorDataType(dataType))
@@ -67,31 +87,44 @@ public sealed class VectorSchema
 /// <summary>集合 Schema（对齐 Python CollectionSchema）。</summary>
 public sealed class CollectionSchema
 {
+    /// <summary>集合名。</summary>
     public string Name { get; set; }
 
+    /// <summary>标量字段列表。</summary>
     public List<FieldSchema> Fields { get; } = [];
 
+    /// <summary>向量字段列表。</summary>
     public List<VectorSchema> Vectors { get; } = [];
 
+    /// <summary>以集合名构造空 Schema。</summary>
+    /// <param name="name">集合名。</param>
     public CollectionSchema(string name)
     {
         Name = name;
     }
 
+    /// <summary>追加标量字段（链式）。</summary>
+    /// <param name="field">字段定义。</param>
     public CollectionSchema AddField(FieldSchema field)
     {
         Fields.Add(field);
         return this;
     }
 
+    /// <summary>追加向量字段（链式）。</summary>
+    /// <param name="vector">向量字段定义。</param>
     public CollectionSchema AddVector(VectorSchema vector)
     {
         Vectors.Add(vector);
         return this;
     }
 
+    /// <summary>按名查找标量字段。</summary>
+    /// <param name="name">字段名。</param>
     public FieldSchema? Field(string name) => Fields.FirstOrDefault(f => f.Name == name);
 
+    /// <summary>按名查找向量字段。</summary>
+    /// <param name="name">字段名。</param>
     public VectorSchema? Vector(string name) => Vectors.FirstOrDefault(v => v.Name == name);
 }
 

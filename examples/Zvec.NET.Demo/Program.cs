@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Zvec.NET;
 using Zvec.NET.Embedding;
 using Zvec.NET.EntityFrameworkCore;
@@ -120,7 +120,7 @@ Console.WriteLine("\n完成（集合已从磁盘删除）。");
 internal static class EfDemo
 {
     [VectorCollection("demo_products")]
-    public class Product
+    public sealed class Product
     {
         [VectorKey]
         public string Sku { get; set; } = "";

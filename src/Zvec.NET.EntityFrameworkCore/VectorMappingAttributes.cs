@@ -9,6 +9,8 @@ public sealed class VectorCollectionAttribute : Attribute
     /// <summary>集合名（同时作为 create_and_open 目录的默认子目录名时由调用方决定，此名用于 schema.name）。</summary>
     public string Name { get; }
 
+    /// <summary>标注集合名。</summary>
+    /// <param name="name">集合名。</param>
     public VectorCollectionAttribute(string name)
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
@@ -35,6 +37,8 @@ public sealed class VectorFieldAttribute : Attribute
     /// <summary>稠密向量维度（稀疏向量为 0）。</summary>
     public int Dimension { get; set; }
 
+    /// <summary>标注向量属性。</summary>
+    /// <param name="dimension">稠密维度（稀疏为 0）。</param>
     public VectorFieldAttribute(int dimension = 0)
     {
         Dimension = dimension;

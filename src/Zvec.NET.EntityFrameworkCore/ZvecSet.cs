@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 
+// CA1000（泛型类型上不宜声明静态成员）：Create/Open 为按实体类型的工厂方法，
+// 静态工厂是刻意设计（约束 TEntity 并返回封闭类型），不采用独立非泛型工厂类。
+#pragma warning disable CA1000
+
 namespace Zvec.NET.EntityFrameworkCore;
 
 /// <summary>
@@ -13,38 +17,64 @@ public interface IZvecSet<TEntity> : IDisposable
     Collection Underlying { get; }
 
     /// <summary>实体主键的字符串形式（zvec 主键）。</summary>
+    /// <param name="entity">实体实例。</param>
     string KeyOf(TEntity entity);
 
+    /// <summary>Upsert 单个实体到向量集合。</summary>
+    /// <param name="entity">实体实例。</param>
     WriteResult Upsert(TEntity entity);
 
+    /// <summary>Upsert 一批实体到向量集合。</summary>
+    /// <param name="entities">实体集合。</param>
     WriteResult[] UpsertRange(IEnumerable<TEntity> entities);
 
+    /// <summary>按实体主键删除对应文档。</summary>
+    /// <param name="entity">实体实例。</param>
     WriteResult Delete(TEntity entity);
 
+    /// <summary>按主键字符串删除对应文档。</summary>
+    /// <param name="keys">主键字符串集合。</param>
     WriteResult[] DeleteKeys(IEnumerable<string> keys);
 
     /// <summary>稠密向量检索（默认取第一个 float[] 向量属性，或 fieldName 指定）。</summary>
+    /// <param name="vector">查询向量。</param>
+    /// <param name="topk">返回条数。</param>
+    /// <param name="filter">引擎端布尔过滤表达式（可为 null）。</param>
+    /// <param name="fieldName">向量属性名（null = 首个 FP32 向量属性）。</param>
     IReadOnlyList<SearchHit> Search(float[] vector, int topk = 10, string? filter = null, string? fieldName = null);
 
     /// <summary>稀疏向量检索（字段须为 SparseVector 类型）。</summary>
+    /// <param name="vector">稀疏查询向量。</param>
+    /// <param name="topk">返回条数。</param>
+    /// <param name="filter">引擎端布尔过滤表达式（可为 null）。</param>
+    /// <param name="fieldName">向量属性名（null = 首个稀疏向量属性）。</param>
     IReadOnlyList<SearchHit> Search(SparseVector vector, int topk = 10, string? filter = null, string? fieldName = null);
 
     /// <summary>检索并回查 EF 实体：向量集合拿键与得分，再从 DbContext 取实体（混合检索闭环）。</summary>
+    /// <param name="context">EF Core DbContext。</param>
+    /// <param name="vector">查询向量。</param>
+    /// <param name="topk">返回条数。</param>
+    /// <param name="filter">引擎端布尔过滤表达式（可为 null）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
     Task<List<SearchHit<TEntity>>> FindSimilarAsync(
         DbContext context, float[] vector, int topk = 10, string? filter = null, CancellationToken cancellationToken = default);
 }
 
 /// <summary>IZvecSet 的默认实现。</summary>
+/// <typeparam name="TEntity">实体类型。</typeparam>
 public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
     where TEntity : class
 {
     private readonly EntityModel<TEntity> _model = EntityModel<TEntity>.Instance;
 
+    /// <inheritdoc/>
     public Collection Underlying { get; }
 
     private ZvecSet(Collection collection) => Underlying = collection;
 
     /// <summary>创建并打开实体向量集合（按实体注解生成 schema；可配置向量索引）。</summary>
+    /// <param name="path">集合目录（须不存在）。</param>
+    /// <param name="configure">集合与索引配置（可选）。</param>
     public static ZvecSet<TEntity> Create(string path, Action<ZvecSetOptions<TEntity>>? configure = null)
     {
         var options = new ZvecSetOptions<TEntity>();
@@ -56,6 +86,8 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
     }
 
     /// <summary>打开已有实体向量集合。</summary>
+    /// <param name="path">集合目录。</param>
+    /// <param name="option">打开选项（只读/mmap 等，可选）。</param>
     public static ZvecSet<TEntity> Open(string path, CollectionOption? option = null)
     {
         EnsureEngineInitialized();
@@ -70,26 +102,31 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
         }
     }
 
+    /// <inheritdoc/>
     public string KeyOf(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
         return _model.KeyGetter(entity);
     }
 
+    /// <inheritdoc/>
     public WriteResult Upsert(TEntity entity) => Underlying.Upsert(BuildDoc(entity));
 
+    /// <inheritdoc/>
     public WriteResult[] UpsertRange(IEnumerable<TEntity> entities)
     {
         ArgumentNullException.ThrowIfNull(entities);
         return Underlying.Upsert(entities.Select(BuildDoc));
     }
 
+    /// <inheritdoc/>
     public WriteResult Delete(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
         return Underlying.Delete(KeyOf(entity));
     }
 
+    /// <inheritdoc/>
     public WriteResult[] DeleteKeys(IEnumerable<string> keys) => Underlying.Delete(keys);
 
     /// <summary>
@@ -103,6 +140,7 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
             ? throw new ArgumentException("过滤表达式不能为空串或包含 NUL 字符。", nameof(filter))
             : filter;
 
+    /// <inheritdoc/>
     public IReadOnlyList<SearchHit> Search(float[] vector, int topk = 10, string? filter = null, string? fieldName = null)
     {
         ArgumentNullException.ThrowIfNull(vector);
@@ -111,6 +149,7 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
         return [.. docs.Select(ToHit)];
     }
 
+    /// <inheritdoc/>
     public IReadOnlyList<SearchHit> Search(SparseVector vector, int topk = 10, string? filter = null, string? fieldName = null)
     {
         ArgumentNullException.ThrowIfNull(vector);
@@ -119,6 +158,7 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
         return [.. docs.Select(ToHit)];
     }
 
+    /// <inheritdoc/>
     public async Task<List<SearchHit<TEntity>>> FindSimilarAsync(
         DbContext context, float[] vector, int topk = 10, string? filter = null, CancellationToken cancellationToken = default)
     {
@@ -134,7 +174,8 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
         var predicate = _model.BuildKeyInExpression(ids);
         Dictionary<string, TEntity> entities = await context.Set<TEntity>()
             .Where(predicate)
-            .ToDictionaryAsync(_model.KeyGetter, StringComparer.Ordinal, cancellationToken);
+            .ToDictionaryAsync(_model.KeyGetter, StringComparer.Ordinal, cancellationToken)
+            .ConfigureAwait(false);
 
         var result = new List<SearchHit<TEntity>>(hits.Count);
         foreach (SearchHit hit in hits)
@@ -182,5 +223,8 @@ public sealed class ZvecSet<TEntity> : IZvecSet<TEntity>
         throw new ArgumentException($"{typeof(TEntity).Name} 没有 {expected} 类型的向量属性，请通过 fieldName 指定。");
     }
 
+    /// <inheritdoc/>
     public void Dispose() => Underlying.Dispose();
 }
+
+#pragma warning restore CA1000

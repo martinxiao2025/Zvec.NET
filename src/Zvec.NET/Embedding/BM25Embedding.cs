@@ -17,6 +17,7 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
     private readonly double _b;
     private readonly bool _queryMode;
 
+    /// <summary>训练语料文档数。</summary>
     public int CorpusSize => _corpusSize;
 
     /// <param name="corpus">训练语料（必须非空）。</param>
@@ -70,11 +71,14 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
         }
     }
 
+    /// <summary>编码模式："query"（仅 IDF 加权）或 "document"（完整 BM25 权重）。</summary>
     public string EncodingType => _queryMode ? "query" : "document";
 
     /// <summary>查询词表项 ID（测试与诊断用途）。</summary>
     internal bool TryGetTermId(string term, out uint termId) => _vocabulary.TryGetValue(term, out termId);
 
+    /// <summary>把文本编码为 BM25 稀疏向量（词表外的词被忽略；非正权重被过滤）。</summary>
+    /// <param name="input">输入文本。</param>
     public SparseVector Embed(string input)
     {
         ArgumentException.ThrowIfNullOrEmpty(input);

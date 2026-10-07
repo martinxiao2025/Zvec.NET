@@ -7,19 +7,25 @@ namespace Zvec.NET;
 public interface IReRanker
 {
     /// <summary>合并多路检索结果，返回前 topk 个文档。</summary>
+    /// <param name="queryResults">各路检索结果（与查询一一对应）。</param>
+    /// <param name="topk">最终保留的文档数。</param>
     IReadOnlyList<Doc> Rerank(IReadOnlyList<IReadOnlyList<Doc>> queryResults, int topk);
 }
 
 /// <summary>Reciprocal Rank Fusion：score = Σ 1/(k + rank)（对齐 Python RrfReRanker）。</summary>
 public sealed class RrfReRanker : IReRanker
 {
+    /// <summary>排名常数 k（默认 60）；rank 从 1 计。</summary>
     public int RankConstant { get; }
 
+    /// <summary>构造 RRF 重排器。</summary>
+    /// <param name="rankConstant">排名常数。</param>
     public RrfReRanker(int rankConstant = 60)
     {
         RankConstant = rankConstant;
     }
 
+    /// <inheritdoc/>
     public IReadOnlyList<Doc> Rerank(IReadOnlyList<IReadOnlyList<Doc>> queryResults, int topk)
     {
         ArgumentNullException.ThrowIfNull(queryResults);
@@ -50,14 +56,18 @@ public sealed class RrfReRanker : IReRanker
 /// <summary>加权重排：每路分数归一化后按权重相加（对齐 Python WeightedReRanker）。</summary>
 public sealed class WeightedReRanker : IReRanker
 {
+    /// <summary>各路权重（与查询路数一致）。</summary>
     public IReadOnlyList<double> Weights { get; }
 
+    /// <summary>构造加权重排器。</summary>
+    /// <param name="weights">各路权重。</param>
     public WeightedReRanker(IReadOnlyList<double> weights)
     {
         ArgumentNullException.ThrowIfNull(weights);
         Weights = weights;
     }
 
+    /// <inheritdoc/>
     public IReadOnlyList<Doc> Rerank(IReadOnlyList<IReadOnlyList<Doc>> queryResults, int topk)
     {
         ArgumentNullException.ThrowIfNull(queryResults);
@@ -108,12 +118,15 @@ public sealed class CallbackReRanker : IReRanker
 {
     private readonly Func<IReadOnlyList<IReadOnlyList<Doc>>, int, IReadOnlyList<Doc>> _callback;
 
+    /// <summary>构造回调重排器。</summary>
+    /// <param name="callback">合并委托：各路结果 + topk → 最终排序。</param>
     public CallbackReRanker(Func<IReadOnlyList<IReadOnlyList<Doc>>, int, IReadOnlyList<Doc>> callback)
     {
         ArgumentNullException.ThrowIfNull(callback);
         _callback = callback;
     }
 
+    /// <inheritdoc/>
     public IReadOnlyList<Doc> Rerank(IReadOnlyList<IReadOnlyList<Doc>> queryResults, int topk) =>
         _callback(queryResults, topk);
 }

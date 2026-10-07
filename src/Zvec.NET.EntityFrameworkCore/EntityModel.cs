@@ -94,7 +94,7 @@ internal sealed class EntityModel<TEntity> where TEntity : class
         KeyGetter = KeyExpression.Compile();
     }
 
-    private bool IsKeyByConvention(PropertyInfo property) =>
+    private static bool IsKeyByConvention(PropertyInfo property) =>
         property.Name == "Id" || property.Name == typeof(TEntity).Name + "Id";
 
     private static readonly HashSet<Type> SupportedKeyTypes =
@@ -143,9 +143,7 @@ internal sealed class EntityModel<TEntity> where TEntity : class
         : property.PropertyType == typeof(double[]) ? DataType.ArrayDouble
         : null;
 
-    public int DimensionOf(PropertyMapping vector) => vector.Property.GetCustomAttribute<VectorFieldAttribute>()?.Dimension ?? 0;
-
-    private Expression<Func<TEntity, string>> BuildKeyExpression()
+    public static int DimensionOf(PropertyMapping vector) => vector.Property.GetCustomAttribute<VectorFieldAttribute>()?.Dimension ?? 0;    private Expression<Func<TEntity, string>> BuildKeyExpression()
     {
         // string 键直接取属性；数值/Guid 键调用实例 ToString()（EF 关系库可翻译为 CAST/CONVERT）。
         ParameterExpression parameter = Expression.Parameter(typeof(TEntity), "e");

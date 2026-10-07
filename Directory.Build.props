@@ -1,0 +1,27 @@
+<Project>
+
+  <!-- 仓库级共享构建属性：TFM/可空性/分析器级别集中管理，各 csproj 只保留项目专属配置。 -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- 本地开发警告可见不阻断；CI 中视为错误。CI 变量由 GitHub Actions 等平台自动注入。 -->
+    <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!-- 可打包项目的调试符号链路：SourceLink 源码嵌入 + snupkg 符号包。 -->
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources Condition="'$(CI)' == 'true'">true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

@@ -12,12 +12,16 @@ public static class Zvec
     /// <summary>库版本（如 "0.7.0"），来自原生库。</summary>
     public static string NativeVersion => NativeUtil.PtrToUtf8Required(NativeMethods.zvec_get_version());
 
+    /// <summary>原生库主版本号。</summary>
     public static int NativeVersionMajor => NativeMethods.zvec_get_version_major();
 
+    /// <summary>原生库次版本号。</summary>
     public static int NativeVersionMinor => NativeMethods.zvec_get_version_minor();
 
+    /// <summary>原生库修订号。</summary>
     public static int NativeVersionPatch => NativeMethods.zvec_get_version_patch();
 
+    /// <summary>运行时是否已初始化。</summary>
     public static bool IsInitialized => NativeMethods.zvec_is_initialized();
 
     /// <summary>
@@ -110,9 +114,13 @@ public static class Zvec
     public static void Shutdown() => NativeUtil.ThrowIfError(NativeMethods.zvec_shutdown());
 
     /// <summary>进程级默认 jieba 词典目录（等价 Python 包导入时自动注册 wheel 内词典）。</summary>
+    /// <param name="dir">词典目录；null 表示清除。</param>
     public static void SetDefaultJiebaDictDir(string? dir) => NativeMethods.zvec_set_default_jieba_dict_dir(dir);
 
     /// <summary>创建并打开集合（对齐 Python zvec.create_and_open）。</summary>
+    /// <param name="path">集合目录（须不存在）。</param>
+    /// <param name="schema">集合 Schema。</param>
+    /// <param name="option">打开选项（可选）。</param>
     public static Collection CreateAndOpen(string path, CollectionSchema schema, CollectionOption? option = null)
     {
         ArgumentNullException.ThrowIfNull(schema);
@@ -138,6 +146,8 @@ public static class Zvec
     }
 
     /// <summary>打开已有集合（对齐 Python zvec.open）。Schema 从磁盘读回。</summary>
+    /// <param name="path">集合目录。</param>
+    /// <param name="option">打开选项（只读/mmap 等，可选）。</param>
     public static Collection Open(string path, CollectionOption? option = null)
     {
         IntPtr nativeOptions = ParamBuilder.BuildCollectionOptions(option);

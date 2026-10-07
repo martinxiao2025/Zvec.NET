@@ -120,8 +120,8 @@ internal sealed class CollectionHandle : NativeHandle
 
     protected override bool ReleaseHandle()
     {
-        NativeMethods.zvec_collection_close(handle);
-        return true;
+        // close 失败（如仍有迭代器未结束）时返回 false，由 SafeHandle 记录 ReleaseHandle 失败事件。
+        return NativeMethods.zvec_collection_close(handle) == 0;
     }
 }
 
