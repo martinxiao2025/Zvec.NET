@@ -3,22 +3,22 @@ using Zvec.NET.Interop;
 
 namespace Zvec.NET;
 
-/// <summary>Collection µÄ Fetch£¨°´Ö÷¼üÈ¡»ØÎÄµµ£©ÄÜÁ¦¡£</summary>
+/// <summary>Collection çš„ Fetchï¼ˆæŒ‰ä¸»é”®å–å›æ–‡æ¡£ï¼‰èƒ½åŠ›ã€‚</summary>
 public sealed unsafe partial class Collection
 {
-    /// <summary>°´µ¥¸öÖ÷¼üÈ¡»ØÎÄµµ¡£</summary>
-    /// <param name="id">Ö÷¼ü¡£</param>
-    /// <param name="outputFields">½öÈ¡»ØµÄ±êÁ¿×Ö¶Î£»null = È«²¿£¨²»Ö§³Ö¿ÕÁĞ±í£©¡£</param>
-    /// <param name="includeVector">ÊÇ·ñÈ¡»ØÏòÁ¿¡£</param>
-    /// <returns>Ö÷¼üµ½ÎÄµµµÄÓ³Éä£»Î´ÃüÖĞ²»°üº¬¸Ã¼ü¡£</returns>
+    /// <summary>æŒ‰å•ä¸ªä¸»é”®å–å›æ–‡æ¡£ã€‚</summary>
+    /// <param name="id">ä¸»é”®ã€‚</param>
+    /// <param name="outputFields">ä»…å–å›çš„æ ‡é‡å­—æ®µï¼›null = å…¨éƒ¨ï¼ˆä¸æ”¯æŒç©ºåˆ—è¡¨ï¼‰ã€‚</param>
+    /// <param name="includeVector">æ˜¯å¦å–å›å‘é‡ã€‚</param>
+    /// <returns>ä¸»é”®åˆ°æ–‡æ¡£çš„æ˜ å°„ï¼›æœªå‘½ä¸­ä¸åŒ…å«è¯¥é”®ã€‚</returns>
     public Dictionary<string, Doc> Fetch(string id, IReadOnlyList<string>? outputFields = null, bool includeVector = true) =>
         FetchInternal([id], includeVector, outputFields);
 
-    /// <summary>°´Ö÷¼üÅúÁ¿È¡»ØÎÄµµ¡£</summary>
-    /// <param name="ids">Ö÷¼ü¼¯ºÏ£¨ÔªËØ²»ÄÜÎª null »ò¿Õ´®£©¡£</param>
-    /// <param name="outputFields">½öÈ¡»ØµÄ±êÁ¿×Ö¶Î£»null = È«²¿£¨²»Ö§³Ö¿ÕÁĞ±í£©¡£</param>
-    /// <param name="includeVector">ÊÇ·ñÈ¡»ØÏòÁ¿¡£</param>
-    /// <returns>Ö÷¼üµ½ÎÄµµµÄÓ³Éä£»Î´ÃüÖĞ²»°üº¬¸Ã¼ü¡£</returns>
+    /// <summary>æŒ‰ä¸»é”®æ‰¹é‡å–å›æ–‡æ¡£ã€‚</summary>
+    /// <param name="ids">ä¸»é”®é›†åˆï¼ˆå…ƒç´ ä¸èƒ½ä¸º null æˆ–ç©ºä¸²ï¼‰ã€‚</param>
+    /// <param name="outputFields">ä»…å–å›çš„æ ‡é‡å­—æ®µï¼›null = å…¨éƒ¨ï¼ˆä¸æ”¯æŒç©ºåˆ—è¡¨ï¼‰ã€‚</param>
+    /// <param name="includeVector">æ˜¯å¦å–å›å‘é‡ã€‚</param>
+    /// <returns>ä¸»é”®åˆ°æ–‡æ¡£çš„æ˜ å°„ï¼›æœªå‘½ä¸­ä¸åŒ…å«è¯¥é”®ã€‚</returns>
     public Dictionary<string, Doc> Fetch(IEnumerable<string> ids, IReadOnlyList<string>? outputFields = null, bool includeVector = true)
     {
         ArgumentNullException.ThrowIfNull(ids);
@@ -31,7 +31,7 @@ public sealed unsafe partial class Collection
         {
             if (string.IsNullOrEmpty(id))
             {
-                throw new ArgumentException("Ö÷¼ü²»ÄÜÎª null »ò¿Õ´®¡£", nameof(ids));
+                throw new ArgumentException("ä¸»é”®ä¸èƒ½ä¸º null æˆ–ç©ºä¸²ã€‚", nameof(ids));
             }
         }
 
@@ -47,7 +47,7 @@ public sealed unsafe partial class Collection
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_fetch(
             lease.Ptr, keys, count, fields, fieldCount, includeVector, out IntPtr documents, out nuint foundCount));
 
-        // ÒıÇæÔÚÈ«²¿Ö÷¼üÎ´ÃüÖĞÊ±¿ÉÄÜ·µ»Ø NULL Ö¸Õë + count=0£ºÏÈÅĞ¿ÕÔÙ¿½±´¡£
+        // å¼•æ“åœ¨å…¨éƒ¨ä¸»é”®æœªå‘½ä¸­æ—¶å¯èƒ½è¿”å› NULL æŒ‡é’ˆ + count=0ï¼šå…ˆåˆ¤ç©ºå†æ‹·è´ã€‚
         var docPointers = new IntPtr[(int)foundCount];
         Dictionary<string, Doc> result = new((int)foundCount);
         try

@@ -2,14 +2,14 @@ using Zvec.NET.Interop;
 
 namespace Zvec.NET;
 
-/// <summary>Collection µÄÈ«Á¿ÎÄµµµü´úÄÜÁ¦¡£</summary>
+/// <summary>Collection çš„å…¨é‡æ–‡æ¡£è¿­ä»£èƒ½åŠ›ã€‚</summary>
 public sealed unsafe partial class Collection
 {
-    /// <summary>È«Á¿¿ìÕÕµü´ú£¨¶ÔÆë Python iter_docs£»Ã¶¾ÙÆÚ¼ä DDL/destroy ÊÜÏŞ£©¡£
-    /// Ã¶¾ÙÈ«³Ì³ÖÓĞ¼¯ºÏ¾ä±ú×âÔ¼£º²¢·¢ Close/Dispose ÍÆ³Ùµ½µü´ú½áÊøºó²ÅÕæÕıÖ´ĞĞÔ­Éú close£¬
-    /// ±ÜÃâÒıÇæÒòµü´úÆ÷Î´¹Ø±Õ¶ø close Ê§°Ü£¨SafeHandle ¼ÇÎªÊÍ·ÅÊ§°Ü½«ÓÀ¾ÃĞ¹Â©Ô­Éú¼¯ºÏ£©¡£</summary>
-    /// <param name="outputFields">½öµü´úµÄ±êÁ¿×Ö¶Î£»null = È«²¿£¨²»Ö§³Ö¿ÕÁĞ±í£©¡£</param>
-    /// <param name="includeVector">ÊÇ·ñµü´úÏòÁ¿¡£</param>
+    /// <summary>å…¨é‡å¿«ç…§è¿­ä»£ï¼ˆå¯¹é½ Python iter_docsï¼›æšä¸¾æœŸé—´ DDL/destroy å—é™ï¼‰ã€‚
+    /// æšä¸¾å…¨ç¨‹æŒæœ‰é›†åˆå¥æŸ„ç§Ÿçº¦ï¼šå¹¶å‘ Close/Dispose æ¨è¿Ÿåˆ°è¿­ä»£ç»“æŸåæ‰çœŸæ­£æ‰§è¡ŒåŸç”Ÿ closeï¼Œ
+    /// é¿å…å¼•æ“å› è¿­ä»£å™¨æœªå…³é—­è€Œ close å¤±è´¥ï¼ˆSafeHandle è®°ä¸ºé‡Šæ”¾å¤±è´¥å°†æ°¸ä¹…æ³„æ¼åŸç”Ÿé›†åˆï¼‰ã€‚</summary>
+    /// <param name="outputFields">ä»…è¿­ä»£çš„æ ‡é‡å­—æ®µï¼›null = å…¨éƒ¨ï¼ˆä¸æ”¯æŒç©ºåˆ—è¡¨ï¼‰ã€‚</param>
+    /// <param name="includeVector">æ˜¯å¦è¿­ä»£å‘é‡ã€‚</param>
     public IEnumerable<Doc> IterateDocs(IReadOnlyList<string>? outputFields = null, bool includeVector = true)
     {
         ValidateOutputFields(outputFields);

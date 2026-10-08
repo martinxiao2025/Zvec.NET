@@ -145,7 +145,19 @@ public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMem
     public Task<WriteResult> UpsertAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        return Underlying.UpsertAsync(BuildDoc(entity), cancellationToken);
+        Doc doc;
+        try
+        {
+            doc = BuildDoc(entity);
+        }
+        catch (Exception ex)
+        {
+            // 转换阶段的异常（如不支持的类型）以 faulted Task 呈现，而非在返回 Task 前同步抛出，
+            // 使调用方在 await 处（而非方法调用处）就能捕获，统一 async 方法的异常传播语义。
+            return Task.FromException<WriteResult>(ex);
+        }
+
+        return Underlying.UpsertAsync(doc, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -211,6 +223,7 @@ public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMem
         List<string> ids = [.. hits.Select(h => h.Id)];
         var predicate = _model.BuildKeyInExpression(ids);
         Dictionary<string, TEntity> entities = await context.Set<TEntity>()
+            .AsNoTracking()
             .Where(predicate)
             .ToDictionaryAsync(_model.KeyGetter, StringComparer.Ordinal, cancellationToken)
             .ConfigureAwait(false);

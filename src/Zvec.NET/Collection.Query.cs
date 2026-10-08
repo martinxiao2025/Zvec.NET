@@ -3,16 +3,16 @@ using Zvec.NET.Interop;
 
 namespace Zvec.NET;
 
-/// <summary>Collection µÄÏòÁ¿ / È«ÎÄ¼ìË÷Ö´ĞĞÄÜÁ¦¡£</summary>
+/// <summary>Collection çš„å‘é‡ / å…¨æ–‡æ£€ç´¢æ‰§è¡Œèƒ½åŠ›ã€‚</summary>
 public sealed unsafe partial class Collection
 {
-    /// <summary>ÏòÁ¿/È«ÎÄ¼ìË÷£¨µ¥Â·£»¶ÔÆë Python Collection.query µÄµ¥ query ĞÎÌ¬£©¡£
-    /// reranker ½ö¶Ô¶àÂ·¼ìË÷ÉúĞ§£ºµ¥Â·´«Èë·Ç null ½«Å×³ö <see cref="ArgumentException"/>£¨ÎŞÂ·¿ÉºÏ²¢£©¡£</summary>
+    /// <summary>å‘é‡/å…¨æ–‡æ£€ç´¢ï¼ˆå•è·¯ï¼›å¯¹é½ Python Collection.query çš„å• query å½¢æ€ï¼‰ã€‚
+    /// reranker ä»…å¯¹å¤šè·¯æ£€ç´¢ç”Ÿæ•ˆï¼šå•è·¯ä¼ å…¥é null å°†æŠ›å‡º <see cref="ArgumentException"/>ï¼ˆæ— è·¯å¯åˆå¹¶ï¼‰ã€‚</summary>
     public IReadOnlyList<Doc> Query(Query? query = null, int topk = 10, string? filter = null,
         bool includeVector = false, IReadOnlyList<string>? outputFields = null, IReRanker? reranker = null) =>
         QueryCore(query is null ? [] : [query], topk, filter, includeVector, outputFields, reranker);
 
-    /// <summary>¶àÂ·¼ìË÷ + ÖØÅÅ£¨¶ÔÆë Python Collection.query µÄ¶à query ĞÎÌ¬£©¡£¶àÂ·£¨&gt;1£©±ØĞëÌá¹© reranker¡£</summary>
+    /// <summary>å¤šè·¯æ£€ç´¢ + é‡æ’ï¼ˆå¯¹é½ Python Collection.query çš„å¤š query å½¢æ€ï¼‰ã€‚å¤šè·¯ï¼ˆ&gt;1ï¼‰å¿…é¡»æä¾› rerankerã€‚</summary>
     public IReadOnlyList<Doc> Query(IReadOnlyList<Query> queries, int topk = 10, string? filter = null,
         bool includeVector = false, IReadOnlyList<string>? outputFields = null, IReRanker? reranker = null) =>
         QueryCore(queries, topk, filter, includeVector, outputFields, reranker);
@@ -23,21 +23,21 @@ public sealed unsafe partial class Collection
         ArgumentNullException.ThrowIfNull(queries);
         if (topk < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(topk), topk, "topk ±ØĞëÎªÕıÊı¡£");
+            throw new ArgumentOutOfRangeException(nameof(topk), topk, "topk å¿…é¡»ä¸ºæ­£æ•°ã€‚");
         }
 
         ValidateOutputFields(outputFields);
 
-        // ²¼¶û¹ıÂË±í´ïÊ½ÓÉÒıÇæ¶ËÇóÖµ£»´Ë´¦½ö×ö±ß½çĞ£Ñé£¨·Ç¿Õ/NUL£©¡£
+        // å¸ƒå°”è¿‡æ»¤è¡¨è¾¾å¼ç”±å¼•æ“ç«¯æ±‚å€¼ï¼›æ­¤å¤„ä»…åšè¾¹ç•Œæ ¡éªŒï¼ˆéç©º/NULï¼‰ã€‚
         string? safeFilter = ValidateFilter(filter);
 
         bool singleDense = queries.Count == 1 && !IsSparseQuery(queries[0]);
         if (singleDense)
         {
-            // C API µ¥Â·Â·¾¶£º³íÃÜÏòÁ¿ + FTS¡£
+            // C API å•è·¯è·¯å¾„ï¼šç¨ å¯†å‘é‡ + FTSã€‚
             if (reranker is not null)
             {
-                throw new ArgumentException("µ¥Â·²éÑ¯ÎŞĞèÖØÅÅ£¨reranker ½ö¶Ô¶àÂ·¼ìË÷ÉúĞ§£©¡£", nameof(reranker));
+                throw new ArgumentException("å•è·¯æŸ¥è¯¢æ— éœ€é‡æ’ï¼ˆreranker ä»…å¯¹å¤šè·¯æ£€ç´¢ç”Ÿæ•ˆï¼‰ã€‚", nameof(reranker));
             }
 
             return ExecuteSingleQuery(queries[0], topk, safeFilter, includeVector, outputFields);
@@ -45,32 +45,32 @@ public sealed unsafe partial class Collection
 
         if (queries.Count == 0)
         {
-            // ÎŞ²éÑ¯ÔØºÉ£º´¿¹ıÂË / È«±íĞÎÌ¬£»ÎŞÂ·¿ÉÖØÅÅ£¬reranker ÓïÒåÓëµ¥Â·Ò»ÖÂµØ¾Ü¾ø¡£
+            // æ— æŸ¥è¯¢è½½è·ï¼šçº¯è¿‡æ»¤ / å…¨è¡¨å½¢æ€ï¼›æ— è·¯å¯é‡æ’ï¼Œreranker è¯­ä¹‰ä¸å•è·¯ä¸€è‡´åœ°æ‹’ç»ã€‚
             if (reranker is not null)
             {
-                throw new ArgumentException("´¿¹ıÂË²éÑ¯ÎŞĞèÖØÅÅ£¨reranker ½ö¶Ô¶àÂ·¼ìË÷ÉúĞ§£©¡£", nameof(reranker));
+                throw new ArgumentException("çº¯è¿‡æ»¤æŸ¥è¯¢æ— éœ€é‡æ’ï¼ˆreranker ä»…å¯¹å¤šè·¯æ£€ç´¢ç”Ÿæ•ˆï¼‰ã€‚", nameof(reranker));
             }
 
             return ExecuteSingleQuery(null, topk, safeFilter, includeVector, outputFields);
         }
 
-        // Ï¡Êèµ¥Â·£ºC API µÄµ¥Â·²éÑ¯ÎŞ·¨±í´ïÏ¡ÊèÏòÁ¿£¨VectorClause Ï¡Êè»º³åÎŞÉèÖÃÈë¿Ú£©£¬
-        // ÇÒ MultiQuery ÒªÇóÖÁÉÙ 2 Â· ¡ª¡ª ¸´ÖÆÎªÁ½Â·ÏàÍ¬×Ó²éÑ¯ºóÓÃ RRF ºÏ²¢£¨½á¹ûµÈ¼ÛÔ­Ğò£©¡£
+        // ç¨€ç–å•è·¯ï¼šC API çš„å•è·¯æŸ¥è¯¢æ— æ³•è¡¨è¾¾ç¨€ç–å‘é‡ï¼ˆVectorClause ç¨€ç–ç¼“å†²æ— è®¾ç½®å…¥å£ï¼‰ï¼Œ
+        // ä¸” MultiQuery è¦æ±‚è‡³å°‘ 2 è·¯ â€”â€” å¤åˆ¶ä¸ºä¸¤è·¯ç›¸åŒå­æŸ¥è¯¢åç”¨ RRF åˆå¹¶ï¼ˆç»“æœç­‰ä»·åŸåºï¼‰ã€‚
         if (queries.Count == 1)
         {
             if (reranker is not null and not RrfReRanker)
             {
                 throw new ArgumentException(
-                    "µ¥Â·²éÑ¯ÎŞĞèÖØÅÅ£»Ï¡Êèµ¥Â·µÄµÈ¼ÛË«Â·ºÏ²¢½öÖ§³Ö RrfReRanker£¨»ò´« null ÓÃÄ¬ÈÏ RRF£©¡£", nameof(reranker));
+                    "å•è·¯æŸ¥è¯¢æ— éœ€é‡æ’ï¼›ç¨€ç–å•è·¯çš„ç­‰ä»·åŒè·¯åˆå¹¶ä»…æ”¯æŒ RrfReRankerï¼ˆæˆ–ä¼  null ç”¨é»˜è®¤ RRFï¼‰ã€‚", nameof(reranker));
             }
 
             return ExecuteSingleOrSparse(queries[0], topk, safeFilter, includeVector, outputFields, reranker as RrfReRanker);
         }
 
-        // ¶àÂ· ¡ú MultiQuery¡£
+        // å¤šè·¯ â†’ MultiQueryã€‚
         if (reranker is null)
         {
-            throw new ArgumentException("¶àÂ·²éÑ¯±ØĞëÌá¹© reranker¡£", nameof(reranker));
+            throw new ArgumentException("å¤šè·¯æŸ¥è¯¢å¿…é¡»æä¾› rerankerã€‚", nameof(reranker));
         }
 
         if (reranker is RrfReRanker or WeightedReRanker)
@@ -78,7 +78,7 @@ public sealed unsafe partial class Collection
             return ExecuteMultiQueryNative(queries, reranker, topk, safeFilter, includeVector, outputFields);
         }
 
-        // Callback / ×Ô¶¨Òå reranker£ºÖğÂ·Ö´ĞĞºó¿Í»§¶ËºÏ²¢£¨¶ÔÆë Python ĞĞÎª£©¡£
+        // Callback / è‡ªå®šä¹‰ rerankerï¼šé€è·¯æ‰§è¡Œåå®¢æˆ·ç«¯åˆå¹¶ï¼ˆå¯¹é½ Python è¡Œä¸ºï¼‰ã€‚
         List<IReadOnlyList<Doc>> perRoute = [];
         foreach (Query q in queries)
         {
@@ -102,7 +102,7 @@ public sealed unsafe partial class Collection
             return ExecuteSingleQuery(query, topk, safeFilter, includeVector, outputFields);
         }
 
-        // Ï¡Êè½èµÀË«Â· MultiQuery + RRF£¨µÈ¼ÛÔ­Ğò£©£»×ğÖØµ÷ÓÃ·½Ö¸¶¨µÄ RRF ²ÎÊı£¨Èç RankConstant£©¡£
+        // ç¨€ç–å€Ÿé“åŒè·¯ MultiQuery + RRFï¼ˆç­‰ä»·åŸåºï¼‰ï¼›å°Šé‡è°ƒç”¨æ–¹æŒ‡å®šçš„ RRF å‚æ•°ï¼ˆå¦‚ RankConstantï¼‰ã€‚
         return ExecuteMultiQueryNative([query, query], reranker ?? new RrfReRanker(), topk, safeFilter, includeVector, outputFields);
     }
 
@@ -151,7 +151,7 @@ public sealed unsafe partial class Collection
         NativeUtil.ThrowIfError(NativeMethods.zvec_vector_query_set_output_fields(nativeQuery, nativeFields, count));
     }
 
-    /// <summary>ÔÚµ¥Â·²éÑ¯¶ÔÏóÉÏÓ¦ÓÃ Query£¨field/²ÎÊı/FTS/ÏòÁ¿£©¡£</summary>
+    /// <summary>åœ¨å•è·¯æŸ¥è¯¢å¯¹è±¡ä¸Šåº”ç”¨ Queryï¼ˆfield/å‚æ•°/FTS/å‘é‡ï¼‰ã€‚</summary>
     private void ApplyQuery(IntPtr nativeQuery, Query query)
     {
         NativeUtil.ThrowIfError(NativeMethods.zvec_vector_query_set_field_name(
@@ -173,7 +173,7 @@ public sealed unsafe partial class Collection
         {
             if (vectorValue is SparseVector)
             {
-                throw new NotSupportedException("Ï¡ÊèÏòÁ¿ÇëÊ¹ÓÃ¶àÂ·²éÑ¯Â·¾¶£¨Query ÁĞ±í£©¡£");
+                throw new NotSupportedException("ç¨€ç–å‘é‡è¯·ä½¿ç”¨å¤šè·¯æŸ¥è¯¢è·¯å¾„ï¼ˆQuery åˆ—è¡¨ï¼‰ã€‚");
             }
 
             SetDenseQueryVector(NativeMethods.zvec_vector_query_set_query_vector, nativeQuery, vectorValue, query.FieldName);
@@ -185,20 +185,20 @@ public sealed unsafe partial class Collection
         Dictionary<string, Doc> fetched = FetchInternal([id], includeVector: true, outputFields: [fieldName]);
         if (!fetched.TryGetValue(id, out Doc? doc))
         {
-            throw new ArgumentException($"ÎÄµµ {id} ²»´æÔÚ£¬ÎŞ·¨ÒÔÆä×÷Îª²éÑ¯ÏòÁ¿À´Ô´¡£", nameof(id));
+            throw new ArgumentException($"æ–‡æ¡£ {id} ä¸å­˜åœ¨ï¼Œæ— æ³•ä»¥å…¶ä½œä¸ºæŸ¥è¯¢å‘é‡æ¥æºã€‚", nameof(id));
         }
 
         return doc.Vectors.TryGetValue(fieldName, out object? vector) && vector is not null
             ? vector
-            : throw new ArgumentException($"ÎÄµµ {id} È±ÉÙÏòÁ¿×Ö¶Î {fieldName}¡£", nameof(id));
+            : throw new ArgumentException($"æ–‡æ¡£ {id} ç¼ºå°‘å‘é‡å­—æ®µ {fieldName}ã€‚", nameof(id));
     }
 
     private delegate int SetVectorDelegate(IntPtr query, void* data, nuint size);
 
     private void SetDenseQueryVector(SetVectorDelegate setter, IntPtr nativeQuery, object vectorValue, string fieldName)
     {
-        // ²éÑ¯ÊÇ×î¸ßÆµÂ·¾¶£º×Ö¶ÎÀàĞÍÓëÖµÀàĞÍÆ¥ÅäÊ±Ö±½Ó fixed Ô­Êı×éÁã¿½±´£¨¶ÔÆëĞ´Â·¾¶ EncodeVector£©£¬
-        // ÆäÓà¿ÉÃ¶¾ÙĞÎÌ¬»ØÍËµ½±àÂë¸´ÖÆÂ·¾¶¡£
+        // æŸ¥è¯¢æ˜¯æœ€é«˜é¢‘è·¯å¾„ï¼šå­—æ®µç±»å‹ä¸å€¼ç±»å‹åŒ¹é…æ—¶ç›´æ¥ fixed åŸæ•°ç»„é›¶æ‹·è´ï¼ˆå¯¹é½å†™è·¯å¾„ EncodeVectorï¼‰ï¼Œ
+        // å…¶ä½™å¯æšä¸¾å½¢æ€å›é€€åˆ°ç¼–ç å¤åˆ¶è·¯å¾„ã€‚
         switch (GetVectorDataType(fieldName), vectorValue)
         {
             case (DataType.VectorFp32, float[] v):
@@ -237,7 +237,7 @@ public sealed unsafe partial class Collection
 
     private DataType GetVectorDataType(string fieldName) =>
         Schema.Vector(fieldName)?.DataType
-        ?? throw new ArgumentException($"ÏòÁ¿×Ö¶Î {fieldName} ²»ÔÚ¼¯ºÏ schema ÖĞ¡£", nameof(fieldName));
+        ?? throw new ArgumentException($"å‘é‡å­—æ®µ {fieldName} ä¸åœ¨é›†åˆ schema ä¸­ã€‚", nameof(fieldName));
 
     private static void ApplyFts(IntPtr nativeQuery, Fts fts, bool isSubQuery)
     {
@@ -266,7 +266,7 @@ public sealed unsafe partial class Collection
         }
     }
 
-    /// <summary>Ô­Éú MultiQuery ¿ìËÙÂ·¾¶£¨RRF / Weighted ÖØÅÅÔÚÒıÇæÄÚÍê³É£©¡£</summary>
+    /// <summary>åŸç”Ÿ MultiQuery å¿«é€Ÿè·¯å¾„ï¼ˆRRF / Weighted é‡æ’åœ¨å¼•æ“å†…å®Œæˆï¼‰ã€‚</summary>
     private Doc[] ExecuteMultiQueryNative(IReadOnlyList<Query> queries, IReRanker reranker,
         int topk, string? safeFilter, bool includeVector, IReadOnlyList<string>? outputFields)
     {
@@ -297,7 +297,7 @@ public sealed unsafe partial class Collection
                     if (weighted.Weights.Count != queries.Count)
                     {
                         throw new ArgumentException(
-                            $"WeightedReRanker µÄÈ¨ÖØÊı£¨{weighted.Weights.Count}£©±ØĞëÓë²éÑ¯Êı£¨{queries.Count}£©Ò»ÖÂ¡£");
+                            $"WeightedReRanker çš„æƒé‡æ•°ï¼ˆ{weighted.Weights.Count}ï¼‰å¿…é¡»ä¸æŸ¥è¯¢æ•°ï¼ˆ{queries.Count}ï¼‰ä¸€è‡´ã€‚");
                     }
 
                     double[] weights = [.. weighted.Weights];
@@ -309,7 +309,7 @@ public sealed unsafe partial class Collection
 
                     break;
                 default:
-                    throw new NotSupportedException("Ô­Éú¿ìËÙÂ·¾¶½öÖ§³Ö RRF Óë Weighted ÖØÅÅ¡£");
+                    throw new NotSupportedException("åŸç”Ÿå¿«é€Ÿè·¯å¾„ä»…æ”¯æŒ RRF ä¸ Weighted é‡æ’ã€‚");
             }
 
             using var lease = AcquireLease();
@@ -381,8 +381,8 @@ public sealed unsafe partial class Collection
 
     private Doc[] ReadDocArray(IntPtr results, nuint count)
     {
-        // ¿Õ½á¹ûÊ±ÒıÇæ¿ÉÄÜ·µ»Ø NULL Ö¸Õë + count=0£¨Í¬ Fetch Â·¾¶£©£ºMarshal.Copy ¶Ô¿ÕÖ¸Õë
-        // ÎŞÌõ¼şÅ× ArgumentNullException£¨¼´Ê¹³¤¶ÈÎª 0£©£¬±ØĞëÏÈÅĞ¿Õ¡£
+        // ç©ºç»“æœæ—¶å¼•æ“å¯èƒ½è¿”å› NULL æŒ‡é’ˆ + count=0ï¼ˆåŒ Fetch è·¯å¾„ï¼‰ï¼šMarshal.Copy å¯¹ç©ºæŒ‡é’ˆ
+        // æ— æ¡ä»¶æŠ› ArgumentNullExceptionï¼ˆå³ä½¿é•¿åº¦ä¸º 0ï¼‰ï¼Œå¿…é¡»å…ˆåˆ¤ç©ºã€‚
         try
         {
             Doc[] output = new Doc[(int)count];

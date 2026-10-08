@@ -4,11 +4,11 @@ using Zvec.NET.Interop;
 namespace Zvec.NET;
 
 /// <summary>
-/// ÒÑ´ò¿ªµÄ¼¯ºÏ£¨¶ÔÆë Python zvec.Collection£©¡£Í¨¹ı <see cref="Zvec.CreateAndOpen"/> / <see cref="Zvec.Open"/> »ñÈ¡¡£
-/// Í¬²½ API Ö±½ÓÓ³ÉäÔ­Éúµ÷ÓÃ£»Async °æ±¾Îª Task.Run ±¡°ü×°¡£
-/// ÍĞ¹Ü²à¶ÔÍ¬Ò»ÊµÀıµÄ²¢·¢µ÷ÓÃÊÇ°²È«µÄ£ºÃ¿´ÎÔ­Éúµ÷ÓÃ³ÖÓĞ¾ä±ú×âÔ¼£¨DangerousAddRef£©£¬
-/// ²¢·¢ <see cref="Close"/> »áÍÆ³Ùµ½×îºóÒ»¸öÔÚÍ¾µ÷ÓÃ½áÊø£¨SafeHandle ÒıÓÃ¼ÆÊıÓïÒå£©£»
-/// ÎÄµµµü´ú£¨IterateDocs/IterateDocsAsync£©ÔÚÕû¸öÃ¶¾ÙÆÚ¼ä³ÖÓĞ×âÔ¼¡£
+/// å·²æ‰“å¼€çš„é›†åˆï¼ˆå¯¹é½ Python zvec.Collectionï¼‰ã€‚é€šè¿‡ <see cref="Zvec.CreateAndOpen"/> / <see cref="Zvec.Open"/> è·å–ã€‚
+/// åŒæ­¥ API ç›´æ¥æ˜ å°„åŸç”Ÿè°ƒç”¨ï¼›Async ç‰ˆæœ¬ä¸º Task.Run è–„åŒ…è£…ã€‚
+/// æ‰˜ç®¡ä¾§å¯¹åŒä¸€å®ä¾‹çš„å¹¶å‘è°ƒç”¨æ˜¯å®‰å…¨çš„ï¼šæ¯æ¬¡åŸç”Ÿè°ƒç”¨æŒæœ‰å¥æŸ„ç§Ÿçº¦ï¼ˆDangerousAddRefï¼‰ï¼Œ
+/// å¹¶å‘ <see cref="Close"/> ä¼šæ¨è¿Ÿåˆ°æœ€åä¸€ä¸ªåœ¨é€”è°ƒç”¨ç»“æŸï¼ˆSafeHandle å¼•ç”¨è®¡æ•°è¯­ä¹‰ï¼‰ï¼›
+/// æ–‡æ¡£è¿­ä»£ï¼ˆIterateDocs/IterateDocsAsyncï¼‰åœ¨æ•´ä¸ªæšä¸¾æœŸé—´æŒæœ‰ç§Ÿçº¦ã€‚
 /// </summary>
 public sealed unsafe partial class Collection : IDisposable
 {
@@ -44,19 +44,19 @@ public sealed unsafe partial class Collection : IDisposable
         }
     }
 
-    /// <summary>¼¯ºÏÂ·¾¶£¨´ò¿ª/´´½¨Ê±´«Èë£©¡£</summary>
+    /// <summary>é›†åˆè·¯å¾„ï¼ˆæ‰“å¼€/åˆ›å»ºæ—¶ä¼ å…¥ï¼‰ã€‚</summary>
     public string Path => _path;
 
-    /// <summary>¼¯ºÏ Schema ÍĞ¹Ü¾µÏñ¡£DDL ²Ù×÷ºó×Ô¶¯Ë¢ĞÂ¡£</summary>
+    /// <summary>é›†åˆ Schema æ‰˜ç®¡é•œåƒã€‚DDL æ“ä½œåè‡ªåŠ¨åˆ·æ–°ã€‚</summary>
     public CollectionSchema Schema { get; private set; }
 
-    /// <summary>¼¯ºÏÊÇ·ñÒÑ¹Ø±Õ/Ïú»Ù¡£</summary>
+    /// <summary>é›†åˆæ˜¯å¦å·²å…³é—­/é”€æ¯ã€‚</summary>
     public bool IsClosed => _handle.IsClosed;
 
     /// <summary>
-    /// Ô­Éúµ÷ÓÃÆÚ¼äµÄ¼¯ºÏ¾ä±ú×âÔ¼£ºDangerousAddRef Óë DangerousRelease Åä¶Ô£¬
-    /// ·ÀÖ¹²¢·¢ Close/Dispose ÔÚ P/Invoke Ö´ĞĞÖĞÍ¾ÊÍ·ÅÔ­Éú¼¯ºÏ¡£
-    /// SafeHandle ±£Ö¤ÒıÓÃ¼ÆÊıÎ´¹éÁãÊ±²»»áÕæÕıÖ´ĞĞ close£»ÒÑ¹Ø±ÕÊ±Å× <see cref="ObjectDisposedException"/>¡£
+    /// åŸç”Ÿè°ƒç”¨æœŸé—´çš„é›†åˆå¥æŸ„ç§Ÿçº¦ï¼šDangerousAddRef ä¸ DangerousRelease é…å¯¹ï¼Œ
+    /// é˜²æ­¢å¹¶å‘ Close/Dispose åœ¨ P/Invoke æ‰§è¡Œä¸­é€”é‡Šæ”¾åŸç”Ÿé›†åˆã€‚
+    /// SafeHandle ä¿è¯å¼•ç”¨è®¡æ•°æœªå½’é›¶æ—¶ä¸ä¼šçœŸæ­£æ‰§è¡Œ closeï¼›å·²å…³é—­æ—¶æŠ› <see cref="ObjectDisposedException"/>ã€‚
     /// </summary>
     private readonly struct HandleLease : IDisposable
     {
@@ -74,7 +74,7 @@ public sealed unsafe partial class Collection : IDisposable
             }
             catch (ObjectDisposedException)
             {
-                throw new ObjectDisposedException(nameof(Collection), "¼¯ºÏÒÑ¹Ø±Õ¡£");
+                throw new ObjectDisposedException(nameof(Collection), "é›†åˆå·²å…³é—­ã€‚");
             }
 
             Ptr = handle.DangerousGetHandle();
@@ -94,8 +94,8 @@ public sealed unsafe partial class Collection : IDisposable
     private HandleLease AcquireLease() => HandleLease.Acquire(_handle);
 
     /// <summary>
-    /// ²¼¶û¹ıÂË±í´ïÊ½£¨Èç "age &gt; 30"£¬ÓÉÒıÇæ½âÎöÇóÖµ£©¡£
-    /// ·Ç²ÎÊı»¯½Ó¿Ú¡ª¡ªÈô±í´ïÊ½À´Ô´²»¿ÉĞÅ£¬µ÷ÓÃ·½±ØĞë×ÔĞĞ×ªÒå/Ğ£Ñé¡£
+    /// å¸ƒå°”è¿‡æ»¤è¡¨è¾¾å¼ï¼ˆå¦‚ "age &gt; 30"ï¼Œç”±å¼•æ“è§£ææ±‚å€¼ï¼‰ã€‚
+    /// éå‚æ•°åŒ–æ¥å£â€”â€”è‹¥è¡¨è¾¾å¼æ¥æºä¸å¯ä¿¡ï¼Œè°ƒç”¨æ–¹å¿…é¡»è‡ªè¡Œè½¬ä¹‰/æ ¡éªŒã€‚
     /// </summary>
     private static string ValidateExpression(string value, string paramName)
     {
@@ -103,12 +103,12 @@ public sealed unsafe partial class Collection : IDisposable
 
         if (value.Length == 0)
         {
-            throw new ArgumentException("±í´ïÊ½²»ÄÜÎª¿Õ¡£", paramName);
+            throw new ArgumentException("è¡¨è¾¾å¼ä¸èƒ½ä¸ºç©ºã€‚", paramName);
         }
 
         if (value.Contains('\0'))
         {
-            throw new ArgumentException("±í´ïÊ½°üº¬·Ç·¨×Ö·û£¨NUL£©¡£", paramName);
+            throw new ArgumentException("è¡¨è¾¾å¼åŒ…å«éæ³•å­—ç¬¦ï¼ˆNULï¼‰ã€‚", paramName);
         }
 
         return value;
@@ -120,18 +120,18 @@ public sealed unsafe partial class Collection : IDisposable
 
         if (value.Length == 0)
         {
-            throw new ArgumentException("Ãû³Æ²»ÄÜÎª¿Õ¡£", paramName);
+            throw new ArgumentException("åç§°ä¸èƒ½ä¸ºç©ºã€‚", paramName);
         }
 
         if (value.Contains('\0'))
         {
-            throw new ArgumentException("Ãû³Æ°üº¬·Ç·¨×Ö·û£¨NUL£©¡£", paramName);
+            throw new ArgumentException("åç§°åŒ…å«éæ³•å­—ç¬¦ï¼ˆNULï¼‰ã€‚", paramName);
         }
 
         return value;
     }
 
-    /// <summary>²éÑ¯¹ıÂË±í´ïÊ½Ğ£Ñé£ºnull ·ÅĞĞ£¨²»¹ıÂË£©£¬¿Õ´®/º¬ NUL ¾Ü¾ø¡£</summary>
+    /// <summary>æŸ¥è¯¢è¿‡æ»¤è¡¨è¾¾å¼æ ¡éªŒï¼šnull æ”¾è¡Œï¼ˆä¸è¿‡æ»¤ï¼‰ï¼Œç©ºä¸²/å« NUL æ‹’ç»ã€‚</summary>
     private static string? ValidateFilter(string? filter)
     {
         if (filter is null)
@@ -143,9 +143,9 @@ public sealed unsafe partial class Collection : IDisposable
     }
 
     /// <summary>
-    /// ±êÁ¿×Ö¶ÎÍ¶Ó°Ğ£Ñé£ºnull = ·µ»ØÈ«²¿±êÁ¿×Ö¶Î£»¿ÕÁĞ±í¾Ü¾ø¡ª¡ªC API ÔÚµ¥Â·²éÑ¯Óë Fetch Â·¾¶ÉÏ
-    /// °Ñ¿ÕÍ¶Ó°¹éÒ»Îª"È«²¿×Ö¶Î"¡¢ÔÚ MultiQuery/µü´úÆ÷Â·¾¶ÉÏÓÖ±íÊ¾"²»È¡ÈÎºÎ×Ö¶Î"£¬ÓïÒå»¥ÏàÃ¬¶Ü£¬
-    /// ÇÒ null ÔªËØÔÚµ¥Â·²éÑ¯Â·¾¶»áÒÔ NULL char* ½øÈëÒıÇæ£¨Î´¶¨ÒåĞĞÎª£©¡£
+    /// æ ‡é‡å­—æ®µæŠ•å½±æ ¡éªŒï¼šnull = è¿”å›å…¨éƒ¨æ ‡é‡å­—æ®µï¼›ç©ºåˆ—è¡¨æ‹’ç»â€”â€”C API åœ¨å•è·¯æŸ¥è¯¢ä¸ Fetch è·¯å¾„ä¸Š
+    /// æŠŠç©ºæŠ•å½±å½’ä¸€ä¸º"å…¨éƒ¨å­—æ®µ"ã€åœ¨ MultiQuery/è¿­ä»£å™¨è·¯å¾„ä¸Šåˆè¡¨ç¤º"ä¸å–ä»»ä½•å­—æ®µ"ï¼Œè¯­ä¹‰äº’ç›¸çŸ›ç›¾ï¼Œ
+    /// ä¸” null å…ƒç´ åœ¨å•è·¯æŸ¥è¯¢è·¯å¾„ä¼šä»¥ NULL char* è¿›å…¥å¼•æ“ï¼ˆæœªå®šä¹‰è¡Œä¸ºï¼‰ã€‚
     /// </summary>
     private static void ValidateOutputFields(IReadOnlyList<string>? outputFields)
     {
@@ -156,44 +156,44 @@ public sealed unsafe partial class Collection : IDisposable
 
         if (outputFields.Count == 0)
         {
-            throw new ArgumentException("outputFields ²»ÄÜÎª¿ÕÁĞ±í£ºĞèÒªÈ«²¿×Ö¶ÎÇë´« null¡£", nameof(outputFields));
+            throw new ArgumentException("outputFields ä¸èƒ½ä¸ºç©ºåˆ—è¡¨ï¼šéœ€è¦å…¨éƒ¨å­—æ®µè¯·ä¼  nullã€‚", nameof(outputFields));
         }
 
         foreach (string? field in outputFields)
         {
             if (string.IsNullOrEmpty(field))
             {
-                throw new ArgumentException("outputFields °üº¬ null »ò¿Õ´®µÄ×Ö¶ÎÃû¡£", nameof(outputFields));
+                throw new ArgumentException("outputFields åŒ…å« null æˆ–ç©ºä¸²çš„å­—æ®µåã€‚", nameof(outputFields));
             }
         }
     }
 
     // =========================================================================
-    // DML£ºĞ´Èë
+    // DMLï¼šå†™å…¥
     // =========================================================================
 
-    /// <summary>²åÈëµ¥¸öÎÄµµ¡£</summary>
-    /// <param name="doc">ÎÄµµ¡£</param>
+    /// <summary>æ’å…¥å•ä¸ªæ–‡æ¡£ã€‚</summary>
+    /// <param name="doc">æ–‡æ¡£ã€‚</param>
     public WriteResult Insert(Doc doc) => Insert([doc])[0];
 
-    /// <summary>²åÈëÎÄµµ£¨ID ±ØĞëÎ¨Ò»£©¡£</summary>
-    /// <param name="docs">ÎÄµµ¼¯ºÏ¡£</param>
+    /// <summary>æ’å…¥æ–‡æ¡£ï¼ˆID å¿…é¡»å”¯ä¸€ï¼‰ã€‚</summary>
+    /// <param name="docs">æ–‡æ¡£é›†åˆã€‚</param>
     public WriteResult[] Insert(IEnumerable<Doc> docs) => WriteDocs(docs, WriteMode.Insert);
 
-    /// <summary>¸üĞÂµ¥¸öÎÄµµ¡£</summary>
-    /// <param name="doc">ÎÄµµ¡£</param>
+    /// <summary>æ›´æ–°å•ä¸ªæ–‡æ¡£ã€‚</summary>
+    /// <param name="doc">æ–‡æ¡£ã€‚</param>
     public WriteResult Update(Doc doc) => Update([doc])[0];
 
-    /// <summary>¸üĞÂÎÄµµµÄÖ¸¶¨×Ö¶Î£¬ÆäÓà×Ö¶Î±£³Ö²»±ä¡£</summary>
-    /// <param name="docs">ÎÄµµ¼¯ºÏ¡£</param>
+    /// <summary>æ›´æ–°æ–‡æ¡£çš„æŒ‡å®šå­—æ®µï¼Œå…¶ä½™å­—æ®µä¿æŒä¸å˜ã€‚</summary>
+    /// <param name="docs">æ–‡æ¡£é›†åˆã€‚</param>
     public WriteResult[] Update(IEnumerable<Doc> docs) => WriteDocs(docs, WriteMode.Update);
 
-    /// <summary>Upsert µ¥¸öÎÄµµ¡£</summary>
-    /// <param name="doc">ÎÄµµ¡£</param>
+    /// <summary>Upsert å•ä¸ªæ–‡æ¡£ã€‚</summary>
+    /// <param name="doc">æ–‡æ¡£ã€‚</param>
     public WriteResult Upsert(Doc doc) => Upsert([doc])[0];
 
-    /// <summary>²åÈë»ò¸üĞÂ£¨°´ ID£©¡£</summary>
-    /// <param name="docs">ÎÄµµ¼¯ºÏ¡£</param>
+    /// <summary>æ’å…¥æˆ–æ›´æ–°ï¼ˆæŒ‰ IDï¼‰ã€‚</summary>
+    /// <param name="docs">æ–‡æ¡£é›†åˆã€‚</param>
     public WriteResult[] Upsert(IEnumerable<Doc> docs) => WriteDocs(docs, WriteMode.Upsert);
 
     private WriteResult[] WriteDocs(IEnumerable<Doc> docs, WriteMode mode)
@@ -275,15 +275,15 @@ public sealed unsafe partial class Collection : IDisposable
     }
 
     // =========================================================================
-    // DML£ºÉ¾³ı
+    // DMLï¼šåˆ é™¤
     // =========================================================================
 
-    /// <summary>É¾³ıµ¥¸öÎÄµµ¡£</summary>
-    /// <param name="id">ÎÄµµÖ÷¼ü¡£</param>
+    /// <summary>åˆ é™¤å•ä¸ªæ–‡æ¡£ã€‚</summary>
+    /// <param name="id">æ–‡æ¡£ä¸»é”®ã€‚</param>
     public WriteResult Delete(string id) => Delete([id])[0];
 
-    /// <summary>°´ ID É¾³ıÎÄµµ¡£</summary>
-    /// <param name="ids">Ö÷¼ü¼¯ºÏ£¨ÔªËØ²»ÄÜÎª null »ò¿Õ´®£©¡£</param>
+    /// <summary>æŒ‰ ID åˆ é™¤æ–‡æ¡£ã€‚</summary>
+    /// <param name="ids">ä¸»é”®é›†åˆï¼ˆå…ƒç´ ä¸èƒ½ä¸º null æˆ–ç©ºä¸²ï¼‰ã€‚</param>
     public WriteResult[] Delete(IEnumerable<string> ids)
     {
         ArgumentNullException.ThrowIfNull(ids);
@@ -293,7 +293,7 @@ public sealed unsafe partial class Collection : IDisposable
         {
             if (string.IsNullOrEmpty(id))
             {
-                throw new ArgumentException("Ö÷¼ü²»ÄÜÎª null »ò¿Õ´®¡£", nameof(ids));
+                throw new ArgumentException("ä¸»é”®ä¸èƒ½ä¸º null æˆ–ç©ºä¸²ã€‚", nameof(ids));
             }
         }
 
@@ -312,8 +312,8 @@ public sealed unsafe partial class Collection : IDisposable
     }
 
     /// <summary>
-    /// °´²¼¶û±í´ïÊ½É¾³ıÆ¥ÅäÎÄµµ£¨Èç "age &gt; 30"£©¡£±í´ïÊ½ÓÉÒıÇæ½âÎö£»
-    /// ·Ç²ÎÊı»¯½Ó¿Ú¡ª¡ªÈô±í´ïÊ½À´Ô´²»¿ÉĞÅ£¬µ÷ÓÃ·½±ØĞë×ÔĞĞĞ£Ñé¡£
+    /// æŒ‰å¸ƒå°”è¡¨è¾¾å¼åˆ é™¤åŒ¹é…æ–‡æ¡£ï¼ˆå¦‚ "age &gt; 30"ï¼‰ã€‚è¡¨è¾¾å¼ç”±å¼•æ“è§£æï¼›
+    /// éå‚æ•°åŒ–æ¥å£â€”â€”è‹¥è¡¨è¾¾å¼æ¥æºä¸å¯ä¿¡ï¼Œè°ƒç”¨æ–¹å¿…é¡»è‡ªè¡Œæ ¡éªŒã€‚
     /// </summary>
     public void DeleteByFilter(string filter)
     {

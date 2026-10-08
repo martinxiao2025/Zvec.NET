@@ -5,7 +5,9 @@ using System.Threading.Channels;
 
 namespace Zvec.NET;
 
-/// <summary>Collection 的异步入口（Task.Run 薄包装；原生库本身支持并发读写）。</summary>
+/// <summary>Collection 的异步入口（Task.Run 薄包装；原生库本身支持并发读写）。
+/// 注意：异步仅把原生阻塞调用调度到线程池，用于脱离调用方同步上下文并支持并发吞吐；
+/// CancellationToken 在任务启动前生效，一旦原生阻塞调用开始执行即无法中断。</summary>
 public sealed partial class Collection
 {
     /// <inheritdoc cref="Insert(Doc)"/>

@@ -13,6 +13,8 @@
 
 > 对齐原生版本 **v0.7.0**（win-x64）。Zvec 处于 0.x 快速演进期，升级原生版本时 API 可能变化。
 
+> **异步取消提示**：`Collection` / `ZvecSet` 的 `*Async` 方法均为线程池 `Task.Run` 薄包装，用于脱离调用方同步上下文、支持并发吞吐；`CancellationToken` 仅在任务启动前生效，一旦原生阻塞（P/Invoke）调用开始执行便无法中断。需要硬超时请在托管侧配合 `CancellationTokenSource.CancelAfter` 或任务等待超时实现。
+
 ## 安装
 
 ```
