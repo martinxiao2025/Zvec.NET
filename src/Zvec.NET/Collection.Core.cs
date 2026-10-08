@@ -94,38 +94,21 @@ public sealed unsafe partial class Collection : IDisposable
     private HandleLease AcquireLease() => HandleLease.Acquire(_handle);
 
     /// <summary>
-    /// 布尔过滤表达式（如 "age &gt; 30"，由引擎解析求值）。
+    /// 布尔过滤表达式（如 "age &gt; 30"，由引擎解析求值）或标识符名称的公共校验（非空 + 拒绝 NUL）。
     /// 非参数化接口——若表达式来源不可信，调用方必须自行转义/校验。
     /// </summary>
-    private static string ValidateExpression(string value, string paramName)
+    private static string ValidateName(string value, string paramName)
     {
         ArgumentNullException.ThrowIfNull(value, paramName);
 
         if (value.Length == 0)
         {
-            throw new ArgumentException("表达式不能为空。", paramName);
+            throw new ArgumentException("值不能为空。", paramName);
         }
 
         if (value.Contains('\0'))
         {
-            throw new ArgumentException("表达式包含非法字符（NUL）。", paramName);
-        }
-
-        return value;
-    }
-
-    private static string ValidateIdentifier(string value, string paramName)
-    {
-        ArgumentNullException.ThrowIfNull(value, paramName);
-
-        if (value.Length == 0)
-        {
-            throw new ArgumentException("名称不能为空。", paramName);
-        }
-
-        if (value.Contains('\0'))
-        {
-            throw new ArgumentException("名称包含非法字符（NUL）。", paramName);
+            throw new ArgumentException("值包含非法字符（NUL）。", paramName);
         }
 
         return value;
@@ -139,7 +122,7 @@ public sealed unsafe partial class Collection : IDisposable
             return null;
         }
 
-        return ValidateExpression(filter, nameof(filter));
+        return ValidateName(filter, nameof(filter));
     }
 
     /// <summary>
@@ -319,6 +302,6 @@ public sealed unsafe partial class Collection : IDisposable
     {
         using var lease = AcquireLease();
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_delete_by_filter(
-            lease.Ptr, ValidateExpression(filter, nameof(filter))));
+            lease.Ptr, ValidateName(filter, nameof(filter))));
     }
 }

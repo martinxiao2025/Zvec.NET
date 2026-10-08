@@ -4,7 +4,8 @@ namespace Zvec.NET;
 
 /// <summary>Collection 的 DDL、统计与生命周期管理。</summary>
 public sealed partial class Collection
-{    // =========================================================================
+{
+    // =========================================================================
     // 索引 DDL
     // =========================================================================
 
@@ -12,7 +13,7 @@ public sealed partial class Collection
     public void CreateIndex(string fieldName, IndexParam indexParam)
     {
         ArgumentNullException.ThrowIfNull(indexParam);
-        ValidateIdentifier(fieldName, nameof(fieldName));
+        ValidateName(fieldName, nameof(fieldName));
 
         IntPtr nativeParams = ParamBuilder.BuildIndexParam(indexParam);
         try
@@ -32,7 +33,7 @@ public sealed partial class Collection
     /// <param name="fieldName">字段名。</param>
     public void DropIndex(string fieldName)
     {
-        ValidateIdentifier(fieldName, nameof(fieldName));
+        ValidateName(fieldName, nameof(fieldName));
         using var lease = AcquireLease();
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_index(lease.Ptr, fieldName));
         RefreshSchema();
@@ -58,13 +59,13 @@ public sealed partial class Collection
     {
         ArgumentNullException.ThrowIfNull(fieldSchema);
         ArgumentNullException.ThrowIfNull(expression);
-        ValidateIdentifier(fieldSchema.Name, nameof(fieldSchema));
+        ValidateName(fieldSchema.Name, nameof(fieldSchema));
 
         IntPtr nativeField = ParamBuilder.BuildFieldSchema(
             fieldSchema.Name, (uint)fieldSchema.DataType, fieldSchema.Nullable, 0, fieldSchema.IndexParam);
         try
         {
-            string? safeExpression = expression.Length == 0 ? null : ValidateExpression(expression, nameof(expression));
+            string? safeExpression = expression.Length == 0 ? null : ValidateName(expression, nameof(expression));
             using var lease = AcquireLease();
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_add_column(lease.Ptr, nativeField, safeExpression));
         }
@@ -80,7 +81,7 @@ public sealed partial class Collection
     /// <param name="fieldName">列名。</param>
     public void DropColumn(string fieldName)
     {
-        ValidateIdentifier(fieldName, nameof(fieldName));
+        ValidateName(fieldName, nameof(fieldName));
         using var lease = AcquireLease();
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_column(lease.Ptr, fieldName));
         RefreshSchema();
@@ -89,17 +90,17 @@ public sealed partial class Collection
     /// <summary>原子性重命名和/或修改列定义（仅数值标量列）。newName 为 null 或空串表示不重命名。</summary>
     public void AlterColumn(string oldName, string? newName = null, FieldSchema? fieldSchema = null)
     {
-        ValidateIdentifier(oldName, nameof(oldName));
+        ValidateName(oldName, nameof(oldName));
         // 空串沿用历史契约：等价 null（不重命名），仅拒绝 null 之外的非法值（空/NUL）。
         if (!string.IsNullOrEmpty(newName))
         {
-            ValidateIdentifier(newName, nameof(newName));
+            ValidateName(newName, nameof(newName));
         }
 
         IntPtr nativeField = IntPtr.Zero;
         if (fieldSchema is not null)
         {
-            ValidateIdentifier(fieldSchema.Name, nameof(fieldSchema));
+            ValidateName(fieldSchema.Name, nameof(fieldSchema));
             nativeField = ParamBuilder.BuildFieldSchema(
                 fieldSchema.Name, (uint)fieldSchema.DataType, fieldSchema.Nullable, 0, fieldSchema.IndexParam);
         }

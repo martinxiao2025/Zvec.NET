@@ -155,7 +155,7 @@ public sealed unsafe partial class Collection
     private void ApplyQuery(IntPtr nativeQuery, Query query)
     {
         NativeUtil.ThrowIfError(NativeMethods.zvec_vector_query_set_field_name(
-            nativeQuery, ValidateIdentifier(query.FieldName, "FieldName")));
+            nativeQuery, ValidateName(query.FieldName, "FieldName")));
         ParamBuilder.ApplyQueryParam(nativeQuery, query.Param, isSubQuery: false);
 
         if (query.Fts is not null)
@@ -343,7 +343,7 @@ public sealed unsafe partial class Collection
         {
             NativeUtil.ThrowIfError(NativeMethods.zvec_sub_query_set_num_candidates(subQuery, Math.Max(topk, 10)));
             NativeUtil.ThrowIfError(NativeMethods.zvec_sub_query_set_field_name(
-                subQuery, ValidateIdentifier(query.FieldName, "FieldName")));
+                subQuery, ValidateName(query.FieldName, "FieldName")));
             ParamBuilder.ApplyQueryParam(subQuery, query.Param, isSubQuery: true);
 
             if (query.Fts is not null)

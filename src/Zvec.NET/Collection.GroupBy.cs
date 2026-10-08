@@ -12,7 +12,7 @@ public sealed partial class Collection
         IReadOnlyList<string>? outputFields = null)
     {
         ArgumentNullException.ThrowIfNull(query);
-        ValidateIdentifier(groupByFieldName, nameof(groupByFieldName));
+        ValidateName(groupByFieldName, nameof(groupByFieldName));
         if (groupCount < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(groupCount), groupCount, "groupCount 至少为 1。");

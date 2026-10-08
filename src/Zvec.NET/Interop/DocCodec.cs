@@ -413,6 +413,13 @@ internal static unsafe class DocCodec
         return doc;
     }
 
+    /// <summary>读取标量字段并解引用为首个元素（Bool/Int32/Int64/UInt32/UInt64/Float/Double 共用）。</summary>
+    private static T ReadScalar<T>(IntPtr doc, string name, DataType dataType) where T : unmanaged
+    {
+        ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
+        return *(T*)ptr;
+    }
+
     private static object? DecodeScalar(IntPtr doc, string name, DataType dataType)
     {
         if (NativeMethods.zvec_doc_is_field_null(doc, name))
@@ -423,40 +430,19 @@ internal static unsafe class DocCodec
         switch (dataType)
         {
             case DataType.Bool:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(bool*)ptr;
-            }
+                return ReadScalar<bool>(doc, name, dataType);
             case DataType.Int32:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(int*)ptr;
-            }
+                return ReadScalar<int>(doc, name, dataType);
             case DataType.Int64:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(long*)ptr;
-            }
+                return ReadScalar<long>(doc, name, dataType);
             case DataType.UInt32:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(uint*)ptr;
-            }
+                return ReadScalar<uint>(doc, name, dataType);
             case DataType.UInt64:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(ulong*)ptr;
-            }
+                return ReadScalar<ulong>(doc, name, dataType);
             case DataType.Float:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(float*)ptr;
-            }
+                return ReadScalar<float>(doc, name, dataType);
             case DataType.Double:
-            {
-                ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
-                return *(double*)ptr;
-            }
+                return ReadScalar<double>(doc, name, dataType);
             case DataType.String:
             {
                 ReadPointer(doc, name, dataType, out IntPtr ptr, out _);
