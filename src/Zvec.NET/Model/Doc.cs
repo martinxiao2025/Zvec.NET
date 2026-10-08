@@ -40,8 +40,16 @@ public sealed class SparseVector
         var values = new float[keys.Length];
         for (int i = 0; i < keys.Length; i++)
         {
-            indices[i] = checked((uint)keys[i]);
-            values[i] = map[keys[i]];
+            long key = keys[i];
+            // 稀疏向量维度须能表示为 uint；负值 or 大于 uint.MaxValue 给出明确的参数异常。
+            if ((ulong)key > uint.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(map), key,
+                    $"稀疏向量维度 {key} 超出 uint 范围（0..{uint.MaxValue}）。");
+            }
+
+            indices[i] = (uint)key;
+            values[i] = map[key];
         }
 
         return new SparseVector(indices, values);

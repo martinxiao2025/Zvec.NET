@@ -442,6 +442,7 @@ public abstract class EmbeddingHttpClientBase : IDisposable
             _httpClient.Dispose();
         }
 
+        // CA1816：#pragma 未豁免；基类为公共非密封类型，SuppressFinalize 让带终结器的派生类型无需重写 IDisposable。
         GC.SuppressFinalize(this);
     }
 }
