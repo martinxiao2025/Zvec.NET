@@ -206,6 +206,16 @@ public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMem
         return [.. docs.Select(ToHit)];
     }
 
+    private async Task<IReadOnlyList<SearchHit>> SearchAsync(float[] vector, int topk, string? filter, string? fieldName,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(vector);
+        IReadOnlyList<Doc> docs = await Underlying.QueryAsync(
+            new Query(ResolveVectorField(fieldName, DataType.VectorFp32), vector: vector),
+            topk, ValidateFilter(filter), cancellationToken: cancellationToken).ConfigureAwait(false);
+        return [.. docs.Select(ToHit)];
+    }
+
     /// <inheritdoc/>
     public async Task<List<SearchHit<TEntity>>> FindSimilarAsync(
         DbContext context, float[] vector, int topk = 10, string? filter = null,
@@ -213,7 +223,8 @@ public sealed class ZvecSet<[DynamicallyAccessedMembers(VectorTrimming.EntityMem
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
-        IReadOnlyList<SearchHit> hits = Search(vector, topk, filter, fieldName);
+        // 检索段走底层异步 API，使取消令牌贯穿检索与 EF 回查两段，且不阻塞调用方线程在原生调用上。
+        IReadOnlyList<SearchHit> hits = await SearchAsync(vector, topk, filter, fieldName, cancellationToken).ConfigureAwait(false);
         if (hits.Count == 0)
         {
             return [];

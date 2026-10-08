@@ -34,8 +34,16 @@ public sealed partial class Collection
             mergedFields.Add(groupByFieldName);
         }
 
-        // 候选拉取量放大 4 倍以覆盖分组截断损耗；checked 防大参数静默溢出为负。
-        int expandedTopk = checked(topkPerGroup * groupCount * 4);
+        // 候选拉取量放大 4 倍以覆盖分组截断损耗；用 long 累计避免溢出，
+        // 越界时抛明确异常而非底层 OverflowException。
+        long expandedTopkL = (long)topkPerGroup * groupCount * 4L;
+        if (expandedTopkL > int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(groupCount),
+                $"groupCount={groupCount} 与 topkPerGroup={topkPerGroup} 组合导致候选拉取量 {expandedTopkL} 超过 int.MaxValue，请调小参数。");
+        }
+
+        int expandedTopk = (int)expandedTopkL;
         IReadOnlyList<Doc> candidates = Query(query, expandedTopk, filter, includeVector, mergedFields);
 
         var groups = new Dictionary<string, List<Doc>>();

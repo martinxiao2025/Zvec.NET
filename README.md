@@ -183,6 +183,7 @@ builder.Services.AddZvecSets(
 ## 与 Python SDK 的已知差异（v0.7.0 C API 能力边界）
 
 - **稀疏向量单路查询**：C API 单路查询无法表达稀疏向量，绑定层自动复制为两路相同子查询并用 RRF 合并（结果等价）。
+- **稀疏向量序列化头部**：写入侧为 4 字节头部，引擎读回侧为 8 字节头部（u64 nnz + 保留位），两侧不对称；绑定层已对坏载荷做越界兜底，并由回归测试 `LargeSparseVectorRoundTrips` 锁定该行为。
 - **GroupByQuery**：C API 未暴露引擎内 group-by 执行入口，当前为客户端模拟（放大 topk 后分组截断），超大规模下与引擎语义可能有差异。
 - **HnswRabitqIndexParam**：C API 仅暴露 metric/quantize；`m`/`ef_construction`/`total_bits` 等使用引擎默认值。
 - **OptimizeOption / IndexOption 的 concurrency**：C API 未暴露线程数参数。

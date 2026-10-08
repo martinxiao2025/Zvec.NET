@@ -32,11 +32,14 @@ internal sealed class EntityModel<[DynamicallyAccessedMembers(DynamicallyAccesse
     /// <summary>键的字符串化表达式（供 EF 查询翻译）。</summary>
     public Expression<Func<TEntity, string>> KeyExpression { get; }
 
+    // 静态缓存避免每次构建 IN 谓词时重复反射 GetMethod。
+    private static readonly MethodInfo ListContainsMethod =
+        typeof(List<string>).GetMethod(nameof(List<string>.Contains), [typeof(string)])!;
+
     /// <summary>构建 e => ids.Contains(key(e)) 的谓词（EF 可翻译为 IN）。</summary>
     public Expression<Func<TEntity, bool>> BuildKeyInExpression(List<string> ids)
     {
-        MethodInfo contains = typeof(List<string>).GetMethod(nameof(List<string>.Contains), [typeof(string)])!;
-        Expression body = Expression.Call(Expression.Constant(ids), contains, KeyExpression.Body);
+        Expression body = Expression.Call(Expression.Constant(ids), ListContainsMethod, KeyExpression.Body);
         return Expression.Lambda<Func<TEntity, bool>>(body, KeyExpression.Parameters[0]);
     }
 
