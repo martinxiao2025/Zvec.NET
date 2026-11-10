@@ -21,7 +21,7 @@
 | `src/Zvec.NET/runtimes/win-x64/native/` | 4 个原生 DLL（勿手动改动） | — | — |
 | `src/Zvec.NET.EntityFrameworkCore/` | EF Core 集成包（依赖 EF Core 10.0.0） | `ZvecSet.cs`、`ZvecServiceCollectionExtensions.cs`、`VectorMappingAttributes.cs` | `tests/Zvec.NET.EntityFrameworkCore.Tests/` |
 | `examples/Zvec.NET.Demo/` | 控制台示例（EF InMemory） | `Program` | — |
-| `tests/Zvec.NET.Tests/` | 核心测试（xunit 2.9.3，真实调用原生库） | `SmokeTests.cs`、`CollectionDmlTests.cs`、`CollectionDdlFtsTests.cs`、`RerankerEmbeddingErrorTests.cs`、`ReviewGapTests.cs` | 自身 |
+| `tests/Zvec.NET.Tests/` | 核心测试（xunit 2.9.3，真实调用原生库） | `SmokeTests.cs`、`CollectionDmlTests.cs`、`CollectionDdlFtsTests.cs`、`RerankerEmbeddingErrorTests.cs`、`ReviewGapTests.cs`、`ModelBoundaryTests.cs`（SparseVector/Schema 边界） | 自身 |
 | `.github/workflows/ci.yml` | CI：windows-latest，build + test | — | — |
 
 ## 关键入口
