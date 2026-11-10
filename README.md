@@ -211,6 +211,29 @@ dotnet run --project examples/Zvec.NET.Demo
 dotnet pack src/Zvec.NET  # 打 NuGet 包
 ```
 
+## 常见问题（FAQ）
+
+**Q：需要单独部署数据库服务吗？**
+不需要。Zvec.NET 是进程内嵌入式向量库，P/Invoke 直接调用随包分发的原生库（见[安装](#安装)），`Init()` 后即可使用。
+
+**Q：支持 Linux / macOS 吗？**
+目前随包仅分发 win-x64 原生库；其他平台状态见[平台支持](#平台支持)。
+
+**Q：不建索引能检索吗？**
+能。未建索引时引擎自动暴力检索（结果精确）；数据量增大后可用 `CreateIndex` 建 HNSW / IVF 等索引加速（示例见[快速上手](#快速上手)）。
+
+**Q：`filter` 表达式是参数化的吗？安全吗？**
+不是。`filter` 由引擎解析，属非参数化接口；来源不可信时调用方须自行校验，绑定层仅拒绝空串与 NUL 字节。详见[已知差异](#与-python-sdk-的已知差异v070-c-api-能力边界)。
+
+**Q：HTTP 嵌入客户端可以指向本机/内网推理服务吗？**
+不可以。出于 SSRF 安全策略，客户端仅允许 http/https，且 localhost、环回、私有、链路本地与保留地址一律拒绝，因此 `base_url` 无法指向本地推理服务。
+
+**Q：和官方 Python SDK 完全一致吗？**
+API 面对齐 v0.7.0，但受 C API 能力边界影响存在少量已知差异（稀疏向量单路查询、GroupBy、ARRAY_BOOL 读回等），完整清单见[已知差异](#与-python-sdk-的已知差异v070-c-api-能力边界)。
+
+**Q：EF Core 集成是什么样的模式？**
+业界标准的「EF 实体 ↔ 向量集合」映射：实体按注解生成 Zvec schema，Upsert 同步数据，相似检索产出键与得分后回查 EF 实体。详见 [EF Core 集成](#ef-core-集成zvecnetentityframeworkcore)。
+
 ## 许可
 
 - 本封装库：Apache-2.0
