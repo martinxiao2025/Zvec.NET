@@ -1,5 +1,15 @@
 # 经验沉淀（最新在最上；每条：情境/决策或踩坑/结论；流水线每轮至少 1 条）
 
+## 2026-11-10 findstr 搜中文不可信（编码伪象）
+- **情境**：复审者用 `findstr /C:"报告"` 检查 SKILL.md 得「零命中」，与首审（Read 工具）发现的 2 处矛盾。
+- **踩坑**：CMD 下 findstr 模式串按 GBK 编码、文件是 UTF-8——字节不匹配导致漏检（假阴性）；与 dotnet test 管道乱码同根源。
+- **结论**：搜仓库文件的中文一律用 PowerShell 显式 UTF-8（`[IO.File]::ReadAllText($p,[Text.Encoding]::UTF8)`）或支持 UTF-8 的工具；findstr 只用于 ASCII 模式。
+
+## 2026-11-10 PS5.1 强转 List 是定长集合
+- **情境**：install-to.ps1 用 `[List[string]](Get-Content $gi)` 后 `RemoveAt` 抛「集合的大小是固定的」。
+- **踩坑**：PS5.1 集合强转 `[List[T]]` 得定长包装，不支持增删。
+- **结论**：可变列表用 `New-Object System.Collections.Generic.List[string]` 再 `AddRange`，不要强转。
+
 ## 2026-11-10 CMD 中分号不是命令分隔符
 - **情境**：执行者在 CMD 里用 `;` 串联多条命令，`;` 后内容被并入 dotnet 参数导致 MSB1008 构建错误。
 - **踩坑**：CMD 的 `;` 是参数分隔符（同空格），不是 PowerShell/ bash 的语句分隔符。
