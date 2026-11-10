@@ -91,13 +91,14 @@ $agentsTmpl = @'
 - Conventional Commits + 中文描述；任务提交格式 `<type>: T######## <摘要>`
 
 ## 任务流水线
-- clone 后先执行：`powershell -File .agents/skills/task-pipeline/scripts/sync-agents.ps1`（创建 .zcode junction + 生成 .github/agents）
+- 智能体映射已随仓库分发：`.zcode/agents/`（ZCode 副本）与 `.github/agents/`（Copilot 映射）clone 即用，无需重建
+- 修改 `.agents/agents/` 后须执行 `powershell -File .agents/skills/task-pipeline/scripts/sync-agents.ps1`，并将三处一起提交
 - 初始化任务清单：`dotnet run .agents/skills/task-pipeline/scripts/taskexcel.cs init`
 - 详见 `.agents/skills/task-pipeline/SKILL.md` 与 `.agents/index.md`
 '@
 Put-File (Join-Path $dstRoot 'AGENTS.md') $agentsTmpl
 
-# 5) 目标项目内执行映射同步（junction + .github/agents）
+# 5) 目标项目内执行映射同步（.zcode/agents 副本 + .github/agents 映射）
 $sync = Join-Path $dstRoot '.agents\skills\task-pipeline\scripts\sync-agents.ps1'
 & powershell -ExecutionPolicy Bypass -File $sync
 Write-Host '完成。后续步骤：1) 改写 AGENTS.md 与 .agents/index.md 2) 按需定制 references/ 3) taskexcel.cs init 建任务清单'

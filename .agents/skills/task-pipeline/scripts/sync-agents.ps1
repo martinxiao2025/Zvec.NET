@@ -1,10 +1,10 @@
 ﻿# sync-agents.ps1 — 智能体映射同步（幂等）
 # 源: .agents/agents/*.md（规范源，入库）
-# 目标1: .zcode/agents      —— junction 指向 .agents/agents（ZCode 发现，本地不入库）
-# 目标2: .github/agents/*.agent.md —— Copilot 映射（入库；Chat 中 @<name> 唤起）
-# 用法: powershell -File .agents/skills/task-pipeline/scripts/sync-agents.ps1 [-SkipLink] [-SkipCopilot]
+# 目标1: .zcode/agents/*.md —— ZCode 副本（原样复制，入库，随 git 分发；.gitignore 已放行该子目录）
+# 目标2: .github/agents/*.agent.md —— Copilot 映射（格式转换，入库；Chat 中 @<name> 唤起）
+# 用法: powershell -File .agents/skills/task-pipeline/scripts/sync-agents.ps1 [-SkipZcode] [-SkipCopilot]
 param(
-    [switch]$SkipLink,
+    [switch]$SkipZcode,
     [switch]$SkipCopilot
 )
 
@@ -12,7 +12,7 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path
 $srcDir = Join-Path $root '.agents\agents'
 $copilotDir = Join-Path $root '.github\agents'
-$zcodeAgents = Join-Path $root '.zcode\agents'
+$zcodeDir = Join-Path $root '.zcode\agents'
 
 if (-not (Test-Path $srcDir)) { Write-Error "未找到规范源目录 $srcDir"; exit 1 }
 
@@ -22,18 +22,18 @@ $toolMap = @{
     'task-reviewer' = 'read, search, run, think, ask'
 }
 
-# --- 1) ZCode junction ---
-if (-not $SkipLink) {
-    if (Test-Path $zcodeAgents) {
-        $item = Get-Item $zcodeAgents -Force
-        if ($item.LinkType -eq 'Junction') {
-            Write-Host "[OK] junction 已存在: $zcodeAgents -> $srcDir"
+# --- 1) ZCode 副本（规范源即 ZCode 格式，原样复制；内容相同则跳过）---
+if (-not $SkipZcode) {
+    New-Item -ItemType Directory -Force -Path $zcodeDir | Out-Null
+    foreach ($file in Get-ChildItem $srcDir -Filter '*.md') {
+        $target = Join-Path $zcodeDir $file.Name
+        $changed = -not (Test-Path $target) -or ([System.IO.File]::ReadAllText($target) -ne [System.IO.File]::ReadAllText($file.FullName))
+        if ($changed) {
+            Copy-Item -Force $file.FullName $target
+            Write-Host "[OK] 已复制 $target"
         } else {
-            Write-Warning "[跳过] $zcodeAgents 已存在且不是 junction；如需重建请先删除该目录后重跑"
+            Write-Host "[=] 无变化 $target"
         }
-    } else {
-        New-Item -ItemType Junction -Path $zcodeAgents -Target $srcDir | Out-Null
-        Write-Host "[OK] 已创建 junction: $zcodeAgents -> $srcDir"
     }
 }
 

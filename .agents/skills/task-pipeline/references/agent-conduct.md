@@ -33,7 +33,7 @@
 
 1. **复制**：在装有本流水线的项目里执行
    `powershell -File .agents/skills/task-pipeline/scripts/install-to.ps1 -Target <目标项目根>`
-   （复制 `.agents/` 技能+智能体+索引/记忆骨架，生成 `.github/agents/` 映射，创建 `.zcode/agents` junction）
+   （复制 `.agents/` 技能+智能体+索引/记忆骨架，生成 `.zcode/agents/` 副本与 `.github/agents/` Copilot 映射）
 2. **初始化数据**：目标项目内 `dotnet run .agents/skills/task-pipeline/scripts/taskexcel.cs init`
 3. **补项目约定**：按目标项目实际情况改写 `AGENTS.md` 与 `.agents/index.md`（install 生成的是骨架）
 4. **定制范本**：直接编辑 `.agents/skills/task-pipeline/references/*.md`，无需动技能与智能体
@@ -44,4 +44,4 @@
 - 构建/测试/运行命令（占位 `<BUILD_CMD>` 等，必须替换为真实命令）
 - 代码规范（nullable/命名/注释要求）
 - 提交信息惯例（本流水线默认 Conventional Commits + 中文描述）
-- 「clone 后先跑 sync-agents.ps1」提示
+- 「智能体副本随仓库分发；修改 `.agents/agents` 后须跑 sync-agents.ps1 并三处一起提交」提示

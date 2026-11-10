@@ -7,4 +7,5 @@ build/
 .idea/
 .vs/
 .mimosa/
-.zcode/
+.zcode/*
+!.zcode/agents/

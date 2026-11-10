@@ -22,7 +22,7 @@ Excel（`tasks/tasks.xlsx`）为唯一任务源；每任务一份文档（`tasks
 ### 第 0 步 前置检查
 
 1. `git status` 工作树必须干净（有未提交改动则先请用户处理，不得混入）
-2. 确认映射：`.zcode/agents` 存在且 `.github/agents/*.agent.md` 与 `.agents/agents/*.md` 同步（不一致先跑 `powershell -File .agents/skills/task-pipeline/scripts/sync-agents.ps1`）
+2. 确认映射：`.zcode/agents` 与 `.github/agents` 同 `.agents/agents` 一致（不一致先跑 `powershell -File .agents/skills/task-pipeline/scripts/sync-agents.ps1`）
 3. 必读：`AGENTS.md` → `.agents/index.md` → `.agents/memory/MEMORY.md`（筛相关）
 
 ### 第 1 步 读取与筛选
