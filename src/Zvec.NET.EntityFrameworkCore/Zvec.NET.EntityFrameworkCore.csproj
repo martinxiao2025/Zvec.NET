@@ -5,7 +5,6 @@
     <RootNamespace>Zvec.NET.EntityFrameworkCore</RootNamespace>
     <AssemblyName>Zvec.NET.EntityFrameworkCore</AssemblyName>
     <PackageId>Zvec.NET.EntityFrameworkCore</PackageId>
-    <Version>0.7.0-preview.1</Version>
     <Authors>Zvec.NET contributors</Authors>
     <Description>Entity Framework Core integration for Zvec.NET: attribute-mapped entity vector sets, upsert sync, and hybrid similar-search that joins back to EF entities.</Description>
     <PackageTags>entity-framework-core;efcore;vector;embedding;search;zvec;hybrid-search</PackageTags>

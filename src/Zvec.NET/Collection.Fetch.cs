@@ -31,8 +31,9 @@ public sealed unsafe partial class Collection
         byte** fields = outputFields is null
             ? null
             : arena.AllocUtf8Array(outputFields.ToArray(), out fieldCount);
+        using AcquiredHandle scope = Acquire();
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_fetch(
-            Handle, keys, count, fields, fieldCount, includeVector, out IntPtr documents, out nuint foundCount));
+            scope.Value, keys, count, fields, fieldCount, includeVector, out IntPtr documents, out nuint foundCount));
 
         var docPointers = new IntPtr[(int)foundCount];
         Marshal.Copy(documents, docPointers, 0, (int)foundCount);
@@ -41,7 +42,7 @@ public sealed unsafe partial class Collection
         {
             foreach (IntPtr docPtr in docPointers)
             {
-                Doc doc = DocCodec.ReadDoc(docPtr, Schema);
+                Doc doc = DocCodec.ReadDoc(docPtr, Schema, includeScore: false);
                 result[doc.Id] = doc;
             }
         }

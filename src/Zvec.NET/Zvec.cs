@@ -35,13 +35,12 @@ public static class Zvec
             IntPtr logConfig = BuildLogConfig(options);
             if (logConfig != IntPtr.Zero)
             {
-                try
+                int logErr = NativeMethods.zvec_config_data_set_log_config(config, logConfig);
+                if (logErr != 0)
                 {
-                    NativeUtil.ThrowIfError(NativeMethods.zvec_config_data_set_log_config(config, logConfig));
-                }
-                finally
-                {
-                    // 所有权已转移给 config。
+                    // set 失败时所有权未转移给 config，须由本方释放，避免泄漏。
+                    NativeMethods.zvec_config_log_destroy(logConfig);
+                    NativeUtil.ThrowIfError(logErr);
                 }
             }
 

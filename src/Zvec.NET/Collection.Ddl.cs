@@ -15,10 +15,11 @@ public sealed partial class Collection
         ArgumentNullException.ThrowIfNull(indexParam);
         ValidateIdentifier(fieldName, nameof(fieldName));
 
+        using AcquiredHandle scope = Acquire();
         IntPtr nativeParams = ParamBuilder.BuildIndexParam(indexParam);
         try
         {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_index(Handle, fieldName, nativeParams));
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_index(scope.Value, fieldName, nativeParams));
         }
         finally
         {
@@ -31,12 +32,17 @@ public sealed partial class Collection
     public void DropIndex(string fieldName)
     {
         ValidateIdentifier(fieldName, nameof(fieldName));
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_index(Handle, fieldName));
+        using AcquiredHandle scope = Acquire();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_index(scope.Value, fieldName));
         RefreshSchema();
     }
 
     /// <summary>优化集合（合并 segment、重建索引等）。</summary>
-    public void Optimize() => NativeUtil.ThrowIfError(NativeMethods.zvec_collection_optimize(Handle));
+    public void Optimize()
+    {
+        using AcquiredHandle scope = Acquire();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_optimize(scope.Value));
+    }
 
     // =========================================================================
     // 列 DDL
@@ -50,12 +56,13 @@ public sealed partial class Collection
     {
         ArgumentNullException.ThrowIfNull(fieldSchema);
 
+        using AcquiredHandle scope = Acquire();
         IntPtr nativeField = ParamBuilder.BuildFieldSchema(
             fieldSchema.Name, (uint)fieldSchema.DataType, fieldSchema.Nullable, 0);
         try
         {
             string? safeExpression = expression.Length == 0 ? null : ValidateExpression(expression, nameof(expression));
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_add_column(Handle, nativeField, safeExpression));
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_add_column(scope.Value, nativeField, safeExpression));
         }
         finally
         {
@@ -68,7 +75,8 @@ public sealed partial class Collection
     public void DropColumn(string fieldName)
     {
         ValidateIdentifier(fieldName, nameof(fieldName));
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_column(Handle, fieldName));
+        using AcquiredHandle scope = Acquire();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_drop_column(scope.Value, fieldName));
         RefreshSchema();
     }
 
@@ -76,7 +84,12 @@ public sealed partial class Collection
     public void AlterColumn(string oldName, string? newName = null, FieldSchema? fieldSchema = null)
     {
         ValidateIdentifier(oldName, nameof(oldName));
+        if (!string.IsNullOrEmpty(newName))
+        {
+            ValidateIdentifier(newName, nameof(newName));
+        }
 
+        using AcquiredHandle scope = Acquire();
         IntPtr nativeField = IntPtr.Zero;
         if (fieldSchema is not null)
         {
@@ -87,7 +100,7 @@ public sealed partial class Collection
         try
         {
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_alter_column(
-                Handle, oldName, string.IsNullOrEmpty(newName) ? null : newName, nativeField));
+                scope.Value, oldName, string.IsNullOrEmpty(newName) ? null : newName, nativeField));
         }
         finally
         {
@@ -102,7 +115,8 @@ public sealed partial class Collection
 
     private void RefreshSchema()
     {
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_schema(HandleNoAddRef, out IntPtr nativeSchema));
+        using AcquiredHandle scope = Acquire();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_schema(scope.Value, out IntPtr nativeSchema));
         var handle = new DelegateHandle(nativeSchema, NativeMethods.zvec_collection_schema_destroy);
         try
         {
@@ -122,7 +136,8 @@ public sealed partial class Collection
     {
         get
         {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_stats(HandleNoAddRef, out IntPtr stats));
+            using AcquiredHandle scope = Acquire();
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_get_stats(scope.Value, out IntPtr stats));
             try
             {
                 ulong docCount = NativeMethods.zvec_collection_stats_get_doc_count(stats);
@@ -145,7 +160,11 @@ public sealed partial class Collection
     }
 
     /// <summary>强制将待写数据落盘。</summary>
-    public void Flush() => NativeUtil.ThrowIfError(NativeMethods.zvec_collection_flush(Handle));
+    public void Flush()
+    {
+        using AcquiredHandle scope = Acquire();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_flush(scope.Value));
+    }
 
     /// <summary>关闭集合句柄（幂等；等待仍打开的迭代器结束后释放文件锁）。</summary>
     public void Close() => _handle.Dispose();
@@ -153,10 +172,10 @@ public sealed partial class Collection
     /// <summary>永久删除集合及其磁盘数据（不可恢复）。</summary>
     public void Destroy()
     {
-        IntPtr handle = Handle;
         try
         {
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_destroy(handle));
+            using AcquiredHandle scope = Acquire();
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_destroy(scope.Value));
         }
         finally
         {

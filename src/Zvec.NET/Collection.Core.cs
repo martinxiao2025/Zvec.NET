@@ -9,7 +9,7 @@ namespace Zvec.NET;
 /// </summary>
 public sealed unsafe partial class Collection : IDisposable
 {
-    private CollectionHandle _handle;
+    private readonly CollectionHandle _handle;
     private readonly string _path;
 
     private Collection(CollectionHandle handle, string path, CollectionSchema schema)
@@ -41,7 +41,7 @@ public sealed unsafe partial class Collection : IDisposable
         }
     }
 
-    /// <summary>集合路径（打开时传入）。经 <see cref="Zvec.Open"/> 打开时为空串。</summary>
+    /// <summary>集合路径（CreateAndOpen / Open 时传入）。</summary>
     public string Path => _path;
 
     /// <summary>集合 Schema 托管镜像。DDL 操作后自动刷新。</summary>
@@ -49,11 +49,11 @@ public sealed unsafe partial class Collection : IDisposable
 
     public bool IsClosed => _handle.IsClosed;
 
-    private IntPtr Handle => _handle.IsClosed
-        ? throw new ObjectDisposedException(nameof(Collection), "集合已关闭。")
-        : _handle.DangerousGetHandle();
-
-    private IntPtr HandleNoAddRef => _handle.DangerousGetHandle();
+    /// <summary>
+    /// 作用域内固定 SafeHandle（DangerousAddRef/Release 配对）并返回裸句柄。
+    /// 防止并发 Close/Dispose 在原生调用进行中释放句柄（use-after-free）。
+    /// </summary>
+    private AcquiredHandle Acquire() => new(_handle);
 
     /// <summary>
     /// 布尔过滤表达式（如 "age &gt; 30"，由引擎解析求值）。
@@ -100,6 +100,29 @@ public sealed unsafe partial class Collection : IDisposable
         return ValidateExpression(filter, nameof(filter));
     }
 
+    /// <summary>一次原生调用期间的 SafeHandle 引用计数保护（using 作用域）。</summary>
+    private readonly struct AcquiredHandle : IDisposable
+    {
+        private readonly CollectionHandle _handle;
+
+        public IntPtr Value { get; }
+
+        public AcquiredHandle(CollectionHandle handle)
+        {
+            bool success = false;
+            handle.DangerousAddRef(ref success);
+            if (!success)
+            {
+                throw new ObjectDisposedException(nameof(Collection), "集合已关闭。");
+            }
+
+            _handle = handle;
+            Value = handle.DangerousGetHandle();
+        }
+
+        public void Dispose() => _handle.DangerousRelease();
+    }
+
     // =========================================================================
     // DML：写入
     // =========================================================================
@@ -132,6 +155,8 @@ public sealed unsafe partial class Collection : IDisposable
         IntPtr[] nativeDocs = new IntPtr[docList.Length];
         try
         {
+            using AcquiredHandle scope = Acquire();
+            IntPtr collection = scope.Value;
             for (int i = 0; i < docList.Length; i++)
             {
                 nativeDocs[i] = DocCodec.BuildDoc(docList[i], Schema);
@@ -144,11 +169,11 @@ public sealed unsafe partial class Collection : IDisposable
                 int err = mode switch
                 {
                     WriteMode.Insert => NativeMethods.zvec_collection_insert_with_results(
-                        Handle, docPtrs, (nuint)docList.Length, out results, out count),
+                        collection, docPtrs, (nuint)docList.Length, out results, out count),
                     WriteMode.Update => NativeMethods.zvec_collection_update_with_results(
-                        Handle, docPtrs, (nuint)docList.Length, out results, out count),
+                        collection, docPtrs, (nuint)docList.Length, out results, out count),
                     _ => NativeMethods.zvec_collection_upsert_with_results(
-                        Handle, docPtrs, (nuint)docList.Length, out results, out count),
+                        collection, docPtrs, (nuint)docList.Length, out results, out count),
                 };
                 NativeUtil.ThrowIfError(err);
             }
@@ -214,8 +239,9 @@ public sealed unsafe partial class Collection : IDisposable
 
         using var arena = new NativeArena();
         byte** pks = arena.AllocUtf8Array(idList, out nuint count);
+        using AcquiredHandle scope = Acquire();
         NativeUtil.ThrowIfError(NativeMethods.zvec_collection_delete_with_results(
-            Handle, pks, count, out IntPtr results, out nuint resultCount));
+            scope.Value, pks, count, out IntPtr results, out nuint resultCount));
 
         return ReadWriteResults(results, resultCount);
     }
@@ -224,7 +250,10 @@ public sealed unsafe partial class Collection : IDisposable
     /// 按布尔表达式删除匹配文档（如 "age &gt; 30"）。表达式由引擎解析；
     /// 非参数化接口——若表达式来源不可信，调用方必须自行校验。
     /// </summary>
-    public void DeleteByFilter(string filter) =>
-        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_delete_by_filter(
-            Handle, ValidateExpression(filter, nameof(filter))));
+    public void DeleteByFilter(string filter)
+    {
+        string validated = ValidateExpression(filter, nameof(filter));
+        using AcquiredHandle scope = Acquire();
+        NativeUtil.ThrowIfError(NativeMethods.zvec_collection_delete_by_filter(scope.Value, validated));
+    }
 }

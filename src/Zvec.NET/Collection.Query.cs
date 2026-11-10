@@ -85,6 +85,7 @@ public sealed unsafe partial class Collection
     private IReadOnlyList<Doc> ExecuteSingleQuery(Query? query, int topk, string? safeFilter,
         bool includeVector, IReadOnlyList<string>? outputFields)
     {
+        using AcquiredHandle scope = Acquire();
         IntPtr nativeQuery = NativeMethods.zvec_vector_query_create();
         NativeUtil.ThrowIfNull(nativeQuery, "vector query");
         try
@@ -105,7 +106,7 @@ public sealed unsafe partial class Collection
             }
 
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_query(
-                Handle, nativeQuery, out IntPtr results, out nuint resultCount));
+                scope.Value, nativeQuery, out IntPtr results, out nuint resultCount));
             return ReadDocArray(results, resultCount);
         }
         finally
@@ -209,6 +210,7 @@ public sealed unsafe partial class Collection
     private IReadOnlyList<Doc> ExecuteMultiQueryNative(IReadOnlyList<Query> queries, IReRanker reranker,
         int topk, string? safeFilter, bool includeVector, IReadOnlyList<string>? outputFields)
     {
+        using AcquiredHandle scope = Acquire();
         IntPtr multiQuery = NativeMethods.zvec_multi_query_create();
         NativeUtil.ThrowIfNull(multiQuery, "multi query");
         try
@@ -252,7 +254,7 @@ public sealed unsafe partial class Collection
             }
 
             NativeUtil.ThrowIfError(NativeMethods.zvec_collection_multi_query(
-                Handle, multiQuery, out IntPtr results, out nuint resultCount));
+                scope.Value, multiQuery, out IntPtr results, out nuint resultCount));
             return ReadDocArray(results, resultCount);
         }
         finally
@@ -326,7 +328,7 @@ public sealed unsafe partial class Collection
             Doc[] output = new Doc[(int)count];
             for (int i = 0; i < docs.Length; i++)
             {
-                output[i] = DocCodec.ReadDoc(docs[i], Schema);
+                output[i] = DocCodec.ReadDoc(docs[i], Schema, includeScore: true);
             }
 
             return output;

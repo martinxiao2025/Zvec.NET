@@ -38,13 +38,12 @@ public sealed class RrfReRanker : IReRanker
 
         return [.. scores.OrderByDescending(pair => pair.Value)
             .Take(topk)
-            .Select(pair =>
-            {
-                Doc doc = docs[pair.Key];
-                doc.Score = (float)pair.Value;
-                return doc;
-            })];
+            .Select(pair => CloneWithScore(docs[pair.Key], pair.Value))];
     }
+
+    /// <summary>返回带新得分的 Doc 副本，不改写调用方持有的原始实例。</summary>
+    private static Doc CloneWithScore(Doc doc, double score) =>
+        new(doc.Id, (float)score) { Fields = doc.Fields, Vectors = doc.Vectors };
 }
 
 /// <summary>加权重排：每路分数归一化后按权重相加（对齐 Python WeightedReRanker）。</summary>
@@ -91,13 +90,12 @@ public sealed class WeightedReRanker : IReRanker
 
         return [.. scores.OrderByDescending(pair => pair.Value)
             .Take(topk)
-            .Select(pair =>
-            {
-                Doc doc = docs[pair.Key];
-                doc.Score = (float)pair.Value;
-                return doc;
-            })];
+            .Select(pair => CloneWithScore(docs[pair.Key], pair.Value))];
     }
+
+    /// <summary>返回带新得分的 Doc 副本，不改写调用方持有的原始实例。</summary>
+    private static Doc CloneWithScore(Doc doc, double score) =>
+        new(doc.Id, (float)score) { Fields = doc.Fields, Vectors = doc.Vectors };
 }
 
 /// <summary>

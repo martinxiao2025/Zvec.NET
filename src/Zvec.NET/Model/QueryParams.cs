@@ -48,12 +48,17 @@ public sealed class IvfQueryParam : QueryParam
     /// <summary>探测的聚类数（默认 10）。</summary>
     public int NProbe { get; set; } = 10;
 
-    public IvfQueryParam(int nProbe = 10, float radius = 0f, bool isLinear = false, bool isUsingRefiner = false)
+    /// <summary>refiner 候选扩展倍数（默认 10）。</summary>
+    public float ScaleFactor { get; set; } = 10f;
+
+    public IvfQueryParam(int nProbe = 10, float radius = 0f, bool isLinear = false, bool isUsingRefiner = false,
+        float scaleFactor = 10f)
     {
         NProbe = nProbe;
         Radius = radius;
         IsLinear = isLinear;
         IsUsingRefiner = isUsingRefiner;
+        ScaleFactor = scaleFactor;
     }
 }
 

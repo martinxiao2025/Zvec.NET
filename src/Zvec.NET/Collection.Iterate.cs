@@ -24,7 +24,7 @@ public sealed unsafe partial class Collection
                 var docHandle = new DocHandle(docPtr);
                 try
                 {
-                    yield return DocCodec.ReadDoc(docPtr, Schema);
+                    yield return DocCodec.ReadDoc(docPtr, Schema, includeScore: false);
                 }
                 finally
                 {
@@ -40,6 +40,7 @@ public sealed unsafe partial class Collection
 
     internal IntPtr CreateDocIterator(IReadOnlyList<string>? outputFields, bool includeVector)
     {
+        using AcquiredHandle scope = Acquire();
         IntPtr options = NativeMethods.zvec_iterator_options_create();
         NativeUtil.ThrowIfNull(options, "iterator options");
         try
@@ -52,7 +53,7 @@ public sealed unsafe partial class Collection
             }
 
             NativeUtil.ThrowIfError(NativeMethods.zvec_iterator_options_set_include_vector(options, includeVector));
-            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_iterator(Handle, options, out IntPtr iterator));
+            NativeUtil.ThrowIfError(NativeMethods.zvec_collection_create_iterator(scope.Value, options, out IntPtr iterator));
             return iterator;
         }
         finally

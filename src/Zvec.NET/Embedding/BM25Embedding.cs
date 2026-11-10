@@ -23,13 +23,19 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
     /// <param name="encodingType">"query"（默认）或 "document"：query 模式仅按 IDF 加权，document 模式计算完整 BM25 权重。</param>
     /// <param name="b">文档长度归一化 [0,1]（默认 0.75）。</param>
     /// <param name="k1">词频饱和度（默认 1.2）。</param>
+    /// <param name="maxVocabularySize">词表上限（按文档频率保留最高的 N 个词元）；0 表示不限制。</param>
     public BM25Embedding(IEnumerable<string> corpus, string encodingType = "query",
-        double b = 0.75, double k1 = 1.2)
+        double b = 0.75, double k1 = 1.2, int maxVocabularySize = 0)
     {
         ArgumentNullException.ThrowIfNull(corpus);
         if (encodingType is not ("query" or "document"))
         {
             throw new ArgumentException("encodingType 必须是 query 或 document。", nameof(encodingType));
+        }
+
+        if (maxVocabularySize < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxVocabularySize), "词表上限不能为负。");
         }
 
         string[] documents = [.. corpus];
@@ -60,8 +66,14 @@ public sealed class BM25Embedding : ISparseEmbeddingFunction
 
         _averageDocLength = totalLength / (double)documents.Length;
 
+        IEnumerable<KeyValuePair<string, int>> selectedTerms = documentFrequency;
+        if (maxVocabularySize > 0 && documentFrequency.Count > maxVocabularySize)
+        {
+            selectedTerms = documentFrequency.OrderByDescending(pair => pair.Value).Take(maxVocabularySize);
+        }
+
         uint nextId = 0;
-        foreach (KeyValuePair<string, int> pair in documentFrequency)
+        foreach (KeyValuePair<string, int> pair in selectedTerms)
         {
             uint id = nextId++;
             _vocabulary[pair.Key] = id;

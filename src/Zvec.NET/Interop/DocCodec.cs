@@ -6,6 +6,9 @@ namespace Zvec.NET.Interop;
 /// <summary>Doc 的原生编码/解码。字段值布局遵循 c_api.cc 的 extract_* 约定。</summary>
 internal static unsafe class DocCodec
 {
+    /// <summary>栈上分配上限（字节）；超过则改堆分配，防止用户输入过大导致栈溢出。</summary>
+    private const int StackAllocThreshold = 1024;
+
     /// <summary>构建原生 Doc（调用方拥有，用 zvec_doc_destroy 释放）。schema 决定每个字段的编码类型。</summary>
     internal static IntPtr BuildDoc(Doc doc, CollectionSchema schema)
     {
@@ -84,13 +87,19 @@ internal static unsafe class DocCodec
             {
                 string str = (string)value;
                 int byteCount = Encoding.UTF8.GetByteCount(str);
-                byte* buffer = stackalloc byte[byteCount == 0 ? 1 : byteCount];
+                Span<byte> span = byteCount <= StackAllocThreshold
+                    ? stackalloc byte[byteCount == 0 ? 1 : byteCount]
+                    : new byte[byteCount];
                 if (byteCount > 0)
                 {
-                    Encoding.UTF8.GetBytes(str, new Span<byte>(buffer, byteCount));
+                    Encoding.UTF8.GetBytes(str, span);
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer, (nuint)byteCount));
+                fixed (byte* buffer = span)
+                {
+                    NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer, (nuint)byteCount));
+                }
+
                 break;
             }
             case DataType.Binary:
@@ -112,9 +121,10 @@ internal static unsafe class DocCodec
                     totalBytes += Encoding.UTF8.GetByteCount(item) + 1;
                 }
 
-                byte* buffer = stackalloc byte[totalBytes];
+                Span<byte> span = totalBytes <= StackAllocThreshold
+                    ? stackalloc byte[totalBytes]
+                    : new byte[totalBytes];
                 int offset = 0;
-                Span<byte> span = new(buffer, totalBytes);
                 foreach (string item in items)
                 {
                     offset += Encoding.UTF8.GetBytes(item, span[offset..]);
@@ -122,7 +132,11 @@ internal static unsafe class DocCodec
                     offset++;
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer, (nuint)offset));
+                fixed (byte* buffer = span)
+                {
+                    NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(doc, name, (uint)dataType, buffer, (nuint)offset));
+                }
+
                 break;
             }
             case DataType.ArrayBool:
@@ -233,36 +247,50 @@ internal static unsafe class DocCodec
             {
                 SparseVector sparse = ToSparse(value);
                 int nnz = sparse.Count;
-                byte* buffer = stackalloc byte[4 + nnz * 8];
-                *(uint*)buffer = (uint)nnz;
-                uint* indices = (uint*)(buffer + 4);
-                float* values = (float*)(indices + nnz);
-                for (int i = 0; i < nnz; i++)
+                int totalBytes = checked(4 + nnz * 8);
+                Span<byte> span = totalBytes <= StackAllocThreshold
+                    ? stackalloc byte[totalBytes]
+                    : new byte[totalBytes];
+                fixed (byte* buffer = span)
                 {
-                    indices[i] = sparse.Indices[i];
-                    values[i] = sparse.Values[i];
+                    *(uint*)buffer = (uint)nnz;
+                    uint* indices = (uint*)(buffer + 4);
+                    float* values = (float*)(indices + nnz);
+                    for (int i = 0; i < nnz; i++)
+                    {
+                        indices[i] = sparse.Indices[i];
+                        values[i] = sparse.Values[i];
+                    }
+
+                    NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
+                        doc, name, (uint)dataType, buffer, (nuint)totalBytes));
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                    doc, name, (uint)dataType, buffer, (nuint)(4 + nnz * 8)));
                 break;
             }
             case DataType.SparseVectorFp16:
             {
                 SparseVector sparse = ToSparse(value);
                 int nnz = sparse.Count;
-                byte* buffer = stackalloc byte[4 + nnz * 6];
-                *(uint*)buffer = (uint)nnz;
-                uint* indices = (uint*)(buffer + 4);
-                Half* values = (Half*)(buffer + 4 + nnz * 4);
-                for (int i = 0; i < nnz; i++)
+                int totalBytes = checked(4 + nnz * 6);
+                Span<byte> span = totalBytes <= StackAllocThreshold
+                    ? stackalloc byte[totalBytes]
+                    : new byte[totalBytes];
+                fixed (byte* buffer = span)
                 {
-                    indices[i] = sparse.Indices[i];
-                    values[i] = (Half)sparse.Values[i];
+                    *(uint*)buffer = (uint)nnz;
+                    uint* indices = (uint*)(buffer + 4);
+                    Half* values = (Half*)(buffer + 4 + nnz * 4);
+                    for (int i = 0; i < nnz; i++)
+                    {
+                        indices[i] = sparse.Indices[i];
+                        values[i] = (Half)sparse.Values[i];
+                    }
+
+                    NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
+                        doc, name, (uint)dataType, buffer, (nuint)totalBytes));
                 }
 
-                NativeUtil.ThrowIfError(NativeMethods.zvec_doc_add_field_by_value(
-                    doc, name, (uint)dataType, buffer, (nuint)(4 + nnz * 6)));
                 break;
             }
             default:
@@ -321,12 +349,16 @@ internal static unsafe class DocCodec
     // 解码
     // =========================================================================
 
-    /// <summary>从原生 Doc 读取托管 Doc。schema 提供字段类型。</summary>
-    internal static Doc ReadDoc(IntPtr nativeDoc, CollectionSchema schema)
+    /// <summary>
+    /// 从原生 Doc 读取托管 Doc。schema 提供字段类型。
+    /// includeScore 指示该原生 Doc 是否携带检索得分（查询结果为 true；Fetch/迭代结果为 false），
+    /// 以免把真实的 0 分（如余弦/IP 距离恰为 0）误判为"无得分"。
+    /// </summary>
+    internal static Doc ReadDoc(IntPtr nativeDoc, CollectionSchema schema, bool includeScore)
     {
         string id = NativeUtil.PtrToUtf8Required(NativeMethods.zvec_doc_get_pk_pointer(nativeDoc));
         float score = NativeMethods.zvec_doc_get_score(nativeDoc);
-        var doc = new Doc(id, score == 0f && !HasScoreField(nativeDoc) ? null : score);
+        var doc = new Doc(id, includeScore ? score : null);
 
         NativeUtil.ThrowIfError(NativeMethods.zvec_doc_get_field_names(nativeDoc, out IntPtr namesPtr, out nuint count));
         try
@@ -355,8 +387,6 @@ internal static unsafe class DocCodec
 
         return doc;
     }
-
-    private static bool HasScoreField(IntPtr nativeDoc) => NativeMethods.zvec_doc_get_score(nativeDoc) != 0f;
 
     private static object? DecodeScalar(IntPtr doc, string name, DataType dataType)
     {

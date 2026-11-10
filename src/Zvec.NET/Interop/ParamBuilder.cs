@@ -97,9 +97,9 @@ internal static unsafe class ParamBuilder
     {
         HnswQueryParam p => NativeMethods.zvec_query_params_hnsw_create(p.Ef, p.Radius, p.IsLinear, p.IsUsingRefiner),
         HnswRabitqQueryParam p => NativeMethods.zvec_query_params_hnsw_create(p.Ef, p.Radius, p.IsLinear, p.IsUsingRefiner),
-        IvfQueryParam p => NativeMethods.zvec_query_params_ivf_create(p.NProbe, p.IsUsingRefiner, 10f),
+        IvfQueryParam p => NativeMethods.zvec_query_params_ivf_create(p.NProbe, p.IsUsingRefiner, p.ScaleFactor),
         IvfRabitqQueryParam p => NativeMethods.zvec_query_params_ivf_rabitq_create(p.NProbe, p.Radius, p.IsLinear, p.IsUsingRefiner),
-        FlatQueryParam => NativeMethods.zvec_query_params_flat_create(is_using_refiner: false, scale_factor: 10f),
+        FlatQueryParam p => NativeMethods.zvec_query_params_flat_create(p.IsUsingRefiner, p.ScaleFactor),
         VamanaQueryParam p => NativeMethods.zvec_query_params_vamana_create(p.EfSearch, p.Radius, p.IsLinear, p.IsUsingRefiner),
         DiskAnnQueryParam p => NativeMethods.zvec_query_params_diskann_create(p.ListSize),
         FtsQueryParam p => NativeMethods.zvec_query_params_fts_create(

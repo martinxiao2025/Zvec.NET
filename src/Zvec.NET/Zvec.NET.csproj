@@ -5,7 +5,6 @@
     <RootNamespace>Zvec.NET</RootNamespace>
     <AssemblyName>Zvec.NET</AssemblyName>
     <PackageId>Zvec.NET</PackageId>
-    <Version>0.7.0-preview.1</Version>
     <Authors>Zvec.NET contributors</Authors>
     <Description>.NET 10 bindings for Zvec, the open-source in-process vector database (wraps the official Zvec C API, aligned with the Python SDK API surface).</Description>
     <PackageTags>vector;database;embedding;search;ann;hnsw;ivf;bm25;hybrid-search;zvec</PackageTags>

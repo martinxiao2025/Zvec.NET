@@ -8,8 +8,11 @@ namespace Zvec.NET.Embedding;
 
 /// <summary>
 /// 嵌入服务 HTTP 客户端基类（OpenAI /v1/embeddings 兼容协议）。
-/// 安全约束：仅允许 http/https；每次请求前解析目标 host，
-/// 拒绝 localhost、环回、私有、链路本地、站点本地、唯一本地、多播与保留地址。
+/// 安全约束：仅允许 http/https；目标 host 不得为 localhost、环回、私有、CGNAT、
+/// 链路本地、站点本地、唯一本地、多播与保留地址。
+/// 内置客户端的所有 TCP 连接经 <see cref="SocketsHttpHandler.ConnectCallback"/> 完成
+/// 「解析 → 校验 → 直连校验通过的地址」，校验与连接针对同一次解析结果，
+/// 消除 DNS 重绑定窗口（注入 HttpClient 时仅保留请求前预检）。
 /// </summary>
 public abstract class EmbeddingHttpClientBase : IDisposable
 {
@@ -39,14 +42,86 @@ public abstract class EmbeddingHttpClientBase : IDisposable
         }
         else
         {
-            _httpClient = new HttpClient { Timeout = timeout ?? TimeSpan.FromSeconds(30) };
+            _httpClient = CreateSecureClient(timeout);
             _ownsClient = true;
         }
     }
 
+    /// <summary>内置客户端：连接级安全校验 + 用户超时。</summary>
+    private static HttpClient CreateSecureClient(TimeSpan? timeout)
+    {
+        TimeSpan effective = timeout ?? TimeSpan.FromSeconds(30);
+        var handler = new SocketsHttpHandler
+        {
+            ConnectTimeout = effective,
+            ConnectCallback = ConnectToValidatedAddressAsync,
+        };
+        return new HttpClient(handler) { Timeout = effective };
+    }
+
+    /// <summary>
+    /// 每次建连时解析、校验并直连校验通过的地址（TLS 的 SNI/证书校验仍用原始主机名）。
+    /// 由此重定向、重试、重建连接均无法绕过网段校验。
+    /// </summary>
+    private static async ValueTask<Stream> ConnectToValidatedAddressAsync(
+        SocketsHttpConnectionContext context, CancellationToken cancellationToken)
+    {
+        string host = context.DnsEndPoint.Host;
+        int port = context.DnsEndPoint.Port;
+
+        IPAddress[] addresses;
+        if (IPAddress.TryParse(host, out IPAddress? literal))
+        {
+            addresses = [literal];
+        }
+        else
+        {
+            try
+            {
+                addresses = await Dns.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false);
+            }
+            catch (SocketException ex)
+            {
+                throw new InvalidOperationException($"无法解析嵌入服务地址 {host}：{ex.Message}", ex);
+            }
+        }
+
+        if (addresses.Length == 0)
+        {
+            throw new InvalidOperationException($"嵌入服务地址 {host} 解析结果为空。");
+        }
+
+        foreach (IPAddress address in addresses)
+        {
+            if (IsDisallowedAddress(address))
+            {
+                throw new NotSupportedException(
+                    $"嵌入服务地址 {host} 解析到本地/私有/保留地址 {address}，已被安全策略拒绝。");
+            }
+        }
+
+        Exception? lastError = null;
+        foreach (IPAddress address in addresses)
+        {
+            var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                await socket.ConnectAsync(address, port, cancellationToken).ConfigureAwait(false);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            catch (Exception ex)
+            {
+                socket.Dispose();
+                lastError = ex;
+            }
+        }
+
+        throw lastError ?? new InvalidOperationException($"无法连接嵌入服务 {host}:{port}。");
+    }
+
     protected static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    /// <summary>发送前校验目标 URL：仅 http/https，且 host 解析结果不得命中本地/私有/保留网段。</summary>
+    /// <summary>发送前预检目标 URL：仅 http/https，且 host 解析结果不得命中本地/私有/保留网段。</summary>
     internal static void ValidateRequestUri(Uri uri)
     {
         if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
@@ -82,6 +157,11 @@ public abstract class EmbeddingHttpClientBase : IDisposable
 
     private static bool IsDisallowedAddress(IPAddress address)
     {
+        if (address.IsIPv4MappedToIPv6)
+        {
+            address = address.MapToIPv4(); // ::ffff:x.x.x.x 形式按 IPv4 网段校验，防绕过。
+        }
+
         if (IPAddress.IsLoopback(address) || address.IsIPv6LinkLocal || address.IsIPv6SiteLocal
             || address.IsIPv6Multicast || address.IsIPv6UniqueLocal)
         {
@@ -96,6 +176,7 @@ public abstract class EmbeddingHttpClientBase : IDisposable
                 or >= 0xAC100000 and <= 0xAC1FFFFF               // 172.16.0.0/12
                 or >= 0xC0A80000 and <= 0xC0A8FFFF               // 192.168.0.0/16
                 or >= 0xA9FE0000 and <= 0xA9FEFFFF               // 169.254.0.0/16 链路本地
+                or >= 0x64400000 and <= 0x647FFFFF               // 100.64.0.0/10 CGNAT
                 or 0x00000000                                      // 0.0.0.0 未指定
                 or >= 0xE0000000 and <= 0xEFFFFFFF                // 224.0.0.0/4 多播
                 or >= 0xF0000000;                                  // 240.0.0.0/4 保留

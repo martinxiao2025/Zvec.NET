@@ -24,7 +24,7 @@ public sealed partial class Collection
             mergedFields.Add(groupByFieldName);
         }
 
-        int expandedTopk = Math.Max(topkPerGroup * groupCount * 4, groupCount * topkPerGroup);
+        int expandedTopk = topkPerGroup * groupCount * 4;
         IReadOnlyList<Doc> candidates = Query(query, expandedTopk, ValidateFilter(filter), includeVector, mergedFields);
 
         var groups = new Dictionary<string, List<Doc>>();
