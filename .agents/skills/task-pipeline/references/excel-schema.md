@@ -1,4 +1,4 @@
-# Excel 规范（tasks/tasks.xlsx）
+# Excel 规范（docs/tasks/tasks.xlsx）
 
 任务流水线的唯一持久化数据源。由 `scripts/taskexcel.cs` 读写，任何修改状态/记录的动作都必须经过脚本完成，禁止手工编辑破坏结构。
 
@@ -6,9 +6,8 @@
 
 | 对象 | 路径（相对项目根，根 = 向上找到 .git 的目录） |
 |---|---|
-| 任务清单 | `tasks/tasks.xlsx` |
-| 任务文档 | `tasks/records/T########.md`（一任务一文档） |
-| 执行报告 | `docs/reports/YYYY-MM-DD-Txxxxxxx~Tyyyyyyy-report.md` |
+| 任务清单 | `docs/tasks/tasks.xlsx` |
+| 任务文档 | `docs/tasks/records/T########.md`（一任务一文档） |
 
 ## Sheet「Tasks」列定义
 
@@ -24,7 +23,7 @@
 | H | 关联编号 | 父任务编号 | – | 子任务填父编号 |
 | I | 执行者 | task-executor / 人名 | – | |
 | J | 结果摘要 | ≤200 字 | – | 执行+审核一句话结论 |
-| K | 提交哈希 | short hash | – | 报告提交时统一回填，日常不填 |
+| K | 提交哈希 | short hash | – | 收尾统一回填，日常不填 |
 | L | 更新时间 | `yyyy-MM-dd HH:mm` | 自动 | update 时脚本写入 |
 
 ## 状态机
@@ -42,7 +41,7 @@
 - 格式：`T` + 年份 4 位 + 年内流水 4 位，如 `T20260001`；子任务 `T20260001.1`（最多一级嵌套）
 - 分配：仅由 `add` 命令分配——取当前年份的年内最大流水 +1；跨年从 `0001` 重新起号
 - 只增不复用：跳过/删除的任务编号永久保留
-- 派生键：Excel 两表、任务文档文件名、报告文件名与小节标题、git 提交信息，全部使用全编号
+- 派生键：Excel 两表、任务文档文件名、git 提交信息，全部使用全编号
 
 ## Sheet「Log」列定义（追加型事件日志，只增不改）
 

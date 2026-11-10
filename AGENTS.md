@@ -24,5 +24,5 @@
 
 - 智能体映射已随仓库分发：`.zcode/agents/`（ZCode 副本）与 `.github/agents/`（Copilot 映射）clone 即用，无需重建
 - 修改 `.agents/agents/` 后须执行 `powershell -ExecutionPolicy Bypass -File .agents/skills/task-pipeline/scripts/sync-agents.ps1`，并将规范源与两处副本三处一起提交
-- 初始化任务清单：`dotnet run .agents/skills/task-pipeline/scripts/taskexcel.cs init`
-- 完整流程见 `.agents/skills/task-pipeline/SKILL.md`；项目地图见 `.agents/index.md`；历史经验见 `.agents/memory/`
+- 初始化任务清单：`dotnet run .agents/skills/task-pipeline/scripts/taskexcel.cs init`（任务数据在 `docs/tasks/tasks.xlsx`，一任务一文档于 `docs/tasks/records/`）
+- 完整流程见 `.agents/skills/task-pipeline/SKILL.md`（收尾只做哈希回填与记忆沉淀，不生成报告）；项目地图见 `.agents/memories/project-arch.md`；历史经验见 `.agents/memories/`

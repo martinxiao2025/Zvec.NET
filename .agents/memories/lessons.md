@@ -1,5 +1,15 @@
 # 经验沉淀（最新在最上；每条：情境/决策或踩坑/结论；流水线每轮至少 1 条）
 
+## 2026-11-10 CMD 中分号不是命令分隔符
+- **情境**：执行者在 CMD 里用 `;` 串联多条命令，`;` 后内容被并入 dotnet 参数导致 MSB1008 构建错误。
+- **踩坑**：CMD 的 `;` 是参数分隔符（同空格），不是 PowerShell/ bash 的语句分隔符。
+- **结论**：本仓库 shell 为 CMD：多命令一律 `&&` 串联或拆成多次调用；PowerShell 片段用 `powershell -Command "..."` 包裹。
+
+## 2026-11-10 智能体映射用入库副本不用 junction
+- **情境**：T20260004 前用 junction（.zcode/agents → .agents/agents），git 无法表达，clone 后必须重建，切换 IDE 体验差。
+- **决策**：junction 退役，改为三处真实副本——`.agents/agents/`（规范源）+ `.zcode/agents/`（原样复制）+ `.github/agents/*.agent.md`（Copilot 转换），均入库；`.gitignore` 用 `.zcode/*` + `!.zcode/agents/` 精确放行，防本地工具状态误入库。
+- **结论**：改智能体只改 `.agents/agents/`，跑 `sync-agents.ps1`（幂等），三处一起提交；任何项目 clone 即用，无需生成。
+
 ## 2026-11-10 spreadsheets 面板读不了 tasks.xlsx
 - **情境**：用 ZCode spreadsheets 面板（open_document）抽查 tasks/tasks.xlsx 报 `corrupt_file: Cannot read properties of undefined (reading 'sheets')`。
 - **踩坑**：面板内置解析器无法解析 ClosedXML 0.105.1 生成的 xlsx（文件本身有效：ClosedXML 反复读写、数据校验均正常，Excel 可正常打开）。

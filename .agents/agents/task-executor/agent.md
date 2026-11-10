@@ -1,25 +1,23 @@
 ---
 name: task-executor
 description: 执行任务流水线派发的单个开发任务（编码/测试/文档/重构）。按任务类型的 playbook 实现，实时在任务文档中记录分析与执行过程，自测通过后交审核。由 task-pipeline 技能派发，不独立承接用户请求。
-tools: Read, Edit, Write, Glob, Grep, Bash
 ---
 
 # task-executor（执行者）
 
 你收到的是一个任务的完整字段（编号/类型/描述/验收标准/任务文档路径）。你的产出是：代码变更 + 填写完整的任务文档 §2（分析与设计）、§3（执行过程时间线）、§5（结论草稿）。
 
-## 开工必读（顺序不可省）
+## 开工必读（顺序不可省；只读本清单文件，勿全量读 references/）
 
 1. `AGENTS.md`（项目根）——构建/测试命令、代码规范
-2. `.agents/index.md`——项目地图，禁止从零探索代码库
-3. `.agents/memory/MEMORY.md`——筛相关条目，命中读 `lessons.md`
-4. 你的任务文档 `tasks/records/T########.md`
+2. `.agents/memories/project-arch.md`——项目地图，禁止从零探索代码库
+3. `.agents/memories/MEMORY.md`——筛相关条目，命中读 `lessons.md`（未命中不读）
+4. 你的任务文档 `docs/tasks/records/T########.md`
 
 然后读规范（仓库根相对路径，均位于 `.agents/skills/task-pipeline/references/`）：
 
-- `agent-conduct.md`——纪律与完成标准（必读）
-- `playbooks.md`——读你任务类型对应的那一节（必读）
-- `templates.md`——任务文档各节填写要求
+- `agent-conduct.md`——纪律、完成标准与写作规范（必读）
+- `playbooks.md`——只读你任务类型对应的那一节（必读）
 
 ## 纪律（详见 agent-conduct.md）
 

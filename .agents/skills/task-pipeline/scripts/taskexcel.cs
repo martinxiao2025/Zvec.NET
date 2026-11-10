@@ -1,7 +1,7 @@
 #:package ClosedXML@0.105.1
 #:property Nullable=enable
 #:property ImplicitUsings=enable
-// taskexcel.cs — 任务流水线 Excel 工具（tasks/tasks.xlsx）
+// taskexcel.cs — 任务流水线 Excel 工具（docs/tasks/tasks.xlsx）
 // 用法: dotnet run taskexcel.cs <init|read|add|update|log|stats|doc> [选项]
 // 规范详见 ../references/excel-schema.md
 
@@ -20,8 +20,8 @@ string[] LogHeaders = { "记录编号", "任务编号", "时间", "阶段", "执
 if (args.Length == 0) { Usage(); return 1; }
 
 var root = FindRoot();
-var xlsxPath = Path.Combine(root, "tasks", "tasks.xlsx");
-var recordsDir = Path.Combine(root, "tasks", "records");
+var xlsxPath = Path.Combine(root, "docs", "tasks", "tasks.xlsx");
+var recordsDir = Path.Combine(root, "docs", "tasks", "records");
 
 try
 {
@@ -246,8 +246,6 @@ int CmdDoc(Dictionary<string, string> o, string path, string recordsDir)
     var file = Path.Combine(recordsDir, t.Id + ".md");
     if (File.Exists(file)) throw new Exception("已存在 " + file + "（不覆盖，请手动编辑）");
     Directory.CreateDirectory(recordsDir);
-    var accepts = t.Accept.Split('；', ';');
-    var list = string.Join("\n", accepts.Select((a, i) => $"{i + 1}. {a}"));
     var content = $"""
         # {t.Id} {t.Title}
 
@@ -255,13 +253,7 @@ int CmdDoc(Dictionary<string, string> o, string path, string recordsDir)
 
         ## 1. 任务内容
 
-        **描述**：{t.Desc}
-
-        **验收标准**：
-
-        {list}
-
-        **关联编号**：{(string.IsNullOrEmpty(t.Parent) ? "—" : t.Parent)}
+        > 见 Excel 行（`read --id {t.Id}` 获取完整字段）。类型：{t.Type} ｜ 优先级：{t.Priority} ｜ 状态随首行同步。
 
         ## 2. 分析与设计
 
@@ -384,13 +376,13 @@ void Usage()
 {
     Console.WriteLine("""
         taskexcel.cs — 任务流水线 Excel 工具
-          dotnet run taskexcel.cs init [--sample] [--force]   创建 tasks/tasks.xlsx（--sample 含示例任务）
+          dotnet run taskexcel.cs init [--sample] [--force]   创建 docs/tasks/tasks.xlsx（--sample 含示例任务）
           dotnet run taskexcel.cs read [--status X|--type Y|--id Z|--all]  读取任务（默认状态=待处理）
           dotnet run taskexcel.cs add --type T --title X --desc Y --accept Z [--priority P] [--parent ID] [--executor E]
           dotnet run taskexcel.cs update --id X [--status S] [--result R] [--executor E] [--commit H]
           dotnet run taskexcel.cs log --id X --stage S --result R --note N [--ref W] [--executor E]
           dotnet run taskexcel.cs stats                           按状态/类型统计
-          dotnet run taskexcel.cs doc --id X                      生成 tasks/records/T########.md 骨架
+          dotnet run taskexcel.cs doc --id X                      生成 docs/tasks/records/T########.md 骨架
         """);
 }
 

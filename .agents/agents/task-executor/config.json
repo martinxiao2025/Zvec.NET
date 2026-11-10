@@ -1,0 +1,1 @@
+{"name":"task-executor","model":null,"tools":{"zcode":["Read","Edit","Write","Glob","Grep","Bash"],"copilot":["read","edit","search","run","think","ask"]}}

@@ -1,4 +1,4 @@
-# 项目索引（Zvec.NET）
+# 项目结构地图（Zvec.NET）
 
 > 一页纸地图：读完本文件即可定位代码与命令，避免从零探索。结构变化时随任务更新（见文末刷新规则）。
 
@@ -22,6 +22,10 @@
 | `src/Zvec.NET.EntityFrameworkCore/` | EF Core 集成包（依赖 EF Core 10.0.0） | `ZvecSet.cs`、`ZvecServiceCollectionExtensions.cs`、`VectorMappingAttributes.cs` | `tests/Zvec.NET.EntityFrameworkCore.Tests/` |
 | `examples/Zvec.NET.Demo/` | 控制台示例（EF InMemory） | `Program` | — |
 | `tests/Zvec.NET.Tests/` | 核心测试（xunit 2.9.3，真实调用原生库） | `SmokeTests.cs`、`CollectionDmlTests.cs`、`CollectionDdlFtsTests.cs`、`RerankerEmbeddingErrorTests.cs`、`ReviewGapTests.cs`、`ModelBoundaryTests.cs`（SparseVector/Schema 边界） | 自身 |
+| `docs/tasks/` | 任务流水线数据 | `tasks.xlsx`、`records/T########.md` | — |
+| `.agents/memories/` | 项目记忆（本文件所在） | `project-arch.md`、`MEMORY.md`、`lessons.md` | — |
+| `.agents/agents/` | 智能体规范源（目录化，sync 据此生成 `.zcode/agents` 与 `.github/agents`） | `<name>/agent.md` + `<name>/config.json` | — |
+| `.agents/tasks/` | 可复用任务定义（add 实例化引用） | `boundary-tests/task.md` | — |
 | `.github/workflows/ci.yml` | CI：windows-latest，build + test | — | — |
 
 ## 关键入口
@@ -36,7 +40,7 @@
 - 全项目 `Nullable enable` + `ImplicitUsings enable`；生成 XML 文档注释（CS1591 已抑制）
 - `AllowUnsafeBlocks`；核心包 `InternalsVisibleTo` 测试
 - 提交惯例：Conventional Commits + 中文描述（见 AGENTS.md）
-- 任务流水线：`.agents/skills/task-pipeline/SKILL.md`；任务数据 `tasks/tasks.xlsx`
+- 任务流水线：`.agents/skills/task-pipeline/SKILL.md`；任务数据 `docs/tasks/tasks.xlsx`
 
 ## 刷新规则
 

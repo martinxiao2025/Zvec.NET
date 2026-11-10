@@ -1,0 +1,1 @@
+{"name":"task-reviewer","model":null,"tools":{"zcode":["Read","Glob","Grep","Bash"],"copilot":["read","search","run","think","ask"]}}
